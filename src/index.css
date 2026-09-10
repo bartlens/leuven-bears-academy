@@ -108,8 +108,8 @@ body {
 .hero-title-peek__stage {
   left: 50%;
   top: 50%;
-  width: 160%;
-  height: 280%;
+  width: 120%;
+  height: 220%;
   transform: translate(-50%, -50%);
 }
 
@@ -160,6 +160,63 @@ body {
 .hero-title-peek__svg .pf-legs,
 .hero-title-peek__svg .pf-head {
   animation: none !important;
+}
+
+.hero-title-peek__svg .pf-arm-l,
+.hero-title-peek__svg .pf-arm-r {
+  transform-box: view-box;
+}
+
+.hero-title-peek__svg .pf-arm-l {
+  transform-origin: 34px 78px;
+}
+
+.hero-title-peek__svg .pf-arm-r {
+  transform-origin: 106px 78px;
+}
+
+/* Both arms up — real cheer (party / wave peak / dunk crowd) */
+@keyframes hero-cheer-arm-l {
+  0% { transform: rotate(0deg); }
+  10% { transform: rotate(48deg); }
+  22% { transform: rotate(98deg); }
+  38% { transform: rotate(82deg); }
+  52% { transform: rotate(112deg); }
+  68% { transform: rotate(88deg); }
+  82% { transform: rotate(102deg); }
+  100% { transform: rotate(70deg); }
+}
+
+@keyframes hero-cheer-arm-r {
+  0% { transform: rotate(0deg); }
+  10% { transform: rotate(-48deg); }
+  22% { transform: rotate(-98deg); }
+  38% { transform: rotate(-82deg); }
+  52% { transform: rotate(-112deg); }
+  68% { transform: rotate(-88deg); }
+  82% { transform: rotate(-102deg); }
+  100% { transform: rotate(-70deg); }
+}
+
+.hero-title-peek__fig--party .pf-arm-l,
+.hero-title-peek__fig--wave .pf-arm-l,
+.hero-title-peek__fig--dunk-crowd .pf-arm-l {
+  animation: hero-cheer-arm-l 3.6s cubic-bezier(0.22, 1, 0.36, 1) both !important;
+  animation-delay: inherit !important;
+}
+
+.hero-title-peek__fig--party .pf-arm-r,
+.hero-title-peek__fig--wave .pf-arm-r,
+.hero-title-peek__fig--dunk-crowd .pf-arm-r {
+  animation: hero-cheer-arm-r 3.6s cubic-bezier(0.22, 1, 0.36, 1) both !important;
+  animation-delay: inherit !important;
+}
+
+/* Ball off during cheer so raised arms read clearly */
+.hero-title-peek__fig--party .pf-ball,
+.hero-title-peek__fig--wave .pf-ball,
+.hero-title-peek__fig--dunk-crowd .pf-ball {
+  opacity: 0 !important;
 }
 
 .hero-title-peek__svg .pf-glow,
@@ -398,7 +455,13 @@ body {
   .hero-title-peek__fig--dunk-climber,
   .hero-title-peek__fig--dunk-crowd,
   .hero-title-peek__confetti,
-  .hero-title-peek__fig.is-laughing .pf-head {
+  .hero-title-peek__fig.is-laughing .pf-head,
+  .hero-title-peek__fig--party .pf-arm-l,
+  .hero-title-peek__fig--party .pf-arm-r,
+  .hero-title-peek__fig--wave .pf-arm-l,
+  .hero-title-peek__fig--wave .pf-arm-r,
+  .hero-title-peek__fig--dunk-crowd .pf-arm-l,
+  .hero-title-peek__fig--dunk-crowd .pf-arm-r {
     animation: none !important;
   }
 

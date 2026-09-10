@@ -122,34 +122,35 @@ function nextClickMode(prev: Mode | null, rosterSize: number): Mode {
 }
 
 function partySlots(count: number) {
+  /* Tight cluster around the title — close together, still a lively blob */
   const base: { left: number; top: number; scale: number }[] = [
-    { left: 8, top: 55, scale: 0.92 },
-    { left: 22, top: 18, scale: 0.85 },
-    { left: 38, top: 62, scale: 1 },
-    { left: 50, top: 8, scale: 0.9 },
-    { left: 62, top: 58, scale: 0.95 },
-    { left: 78, top: 22, scale: 0.88 },
-    { left: 92, top: 52, scale: 0.9 },
-    { left: 15, top: 88, scale: 0.8 },
-    { left: 48, top: 92, scale: 0.82 },
-    { left: 85, top: 85, scale: 0.8 },
-    { left: 30, top: 40, scale: 0.78 },
-    { left: 70, top: 38, scale: 0.78 },
+    { left: 34, top: 50, scale: 0.96 },
+    { left: 42, top: 30, scale: 0.9 },
+    { left: 50, top: 56, scale: 1 },
+    { left: 50, top: 22, scale: 0.92 },
+    { left: 58, top: 52, scale: 0.97 },
+    { left: 66, top: 32, scale: 0.9 },
+    { left: 68, top: 50, scale: 0.94 },
+    { left: 38, top: 68, scale: 0.86 },
+    { left: 50, top: 72, scale: 0.88 },
+    { left: 62, top: 68, scale: 0.86 },
+    { left: 42, top: 42, scale: 0.84 },
+    { left: 58, top: 40, scale: 0.84 },
   ]
   const slots = [...base]
   for (let i = base.length; i < count; i++) {
     const angle = ((i * 137.508) % 360) * (Math.PI / 180)
-    const ring = 28 + (i % 4) * 10
+    const ring = 12 + (i % 4) * 5
     slots.push({
-      left: Math.max(2, Math.min(98, 50 + Math.cos(angle) * ring)),
-      top: Math.max(4, Math.min(96, 50 + Math.sin(angle) * ring * 0.85)),
-      scale: 0.72 + (i % 5) * 0.04,
+      left: Math.max(28, Math.min(72, 50 + Math.cos(angle) * ring)),
+      top: Math.max(18, Math.min(76, 50 + Math.sin(angle) * ring * 0.7)),
+      scale: 0.78 + (i % 5) * 0.035,
     })
   }
   return slots.slice(0, count).map((s, i) => ({
     left: `${s.left}%`,
     top: `${s.top}%`,
-    delay: `${i * 0.04}s`,
+    delay: `${i * 0.035}s`,
     scale: s.scale,
   }))
 }
