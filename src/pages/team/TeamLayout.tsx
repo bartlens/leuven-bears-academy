@@ -1,0 +1,52 @@
+import { Link, Outlet, useParams } from 'react-router-dom'
+import { TeamSubNav } from '../../components/TeamSubNav'
+import { SectionHeader } from '../../components/SectionHeader'
+import { getTeamBySlug, groupLabels, type Team } from '../../data/teams'
+
+export type TeamOutletContext = {
+  team: Team
+}
+
+export function TeamLayout() {
+  const { slug } = useParams()
+  const team = slug ? getTeamBySlug(slug) : undefined
+
+  if (!team) {
+    return (
+      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+        <SectionHeader eyebrow="Teams" title="Ploeg niet gevonden" />
+        <Link to="/teams" className="font-semibold text-hoop-bright hover:underline">
+          ← Terug naar teams
+        </Link>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <div className="border-b border-white/8 bg-ink-soft/80">
+        <div className="mx-auto max-w-6xl px-4 py-5 sm:px-6">
+          <Link
+            to="/teams"
+            className="mb-3 inline-flex text-sm font-semibold text-warm hover:text-hoop-bright"
+          >
+            ← Alle teams
+          </Link>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-hoop-bright">
+                {groupLabels[team.group]}
+              </p>
+              <h1 className="font-display text-3xl font-bold tracking-tight text-cream sm:text-4xl">
+                {team.name}
+              </h1>
+              <p className="mt-1 text-sm text-muted">{team.category}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <TeamSubNav />
+      <Outlet context={{ team } satisfies TeamOutletContext} />
+    </div>
+  )
+}

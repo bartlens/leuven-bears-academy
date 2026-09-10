@@ -1,0 +1,65 @@
+lijst,waarde,label_nl
+haarstijl,short,Kort
+haarstijl,spiky,Stekelig
+haarstijl,bowl,Bowl / pony
+haarstijl,side,Zijscheiding
+haarstijl,curly,Krullen
+haarstijl,fluffy,Pluizig
+haarstijl,long,Lang
+accent,orange,Oranje
+accent,bear,Bear grijs
+accent,warm,Warm
+move,arm-roll,Arm-roll
+move,finger-spin,Vingerspin
+move,between-legs,Tussenbenen
+move,behind-back,Achterlangs
+move,crossover,Crossover
+move,dunk,Dunk
+move,rebound,Rebound
+move,step-back,Step-back
+move,waist-wrap,Taille-wrap
+move,shoulder-roll,Schouder-roll
+move,layup,Lay-up
+move,behind-head,No-look
+move,spin-move,Spin-move
+thuis_uit,thuis,Thuis
+thuis_uit,uit,Uit
+status_match,upcoming,Gepland
+status_match,played,Gespeeld
+status_training,ja,Doorgaan
+status_training,nee,Geannuleerd / geen training
+zichtbaar,ja,Ja
+zichtbaar,nee,Nee
+dag,maandag,Maandag
+dag,dinsdag,Dinsdag
+dag,woensdag,Woensdag
+dag,donderdag,Donderdag
+dag,vrijdag,Vrijdag
+dag,zaterdag,Zaterdag
+dag,zondag,Zondag
+haarkleur,#d4b45a,Blond goud
+haarkleur,#e6c870,Blond warm
+haarkleur,#f0d078,Blond licht
+haarkleur,#1f1410,Zwart/bruin donker
+haarkleur,#1a1a1a,Zwart
+haarkleur,#5c3d24,Bruin
+huidskleur,#e8b48a,Warm medium
+huidskleur,#f5c7a1,Licht
+huidskleur,#f8d4b8,Zeer licht
+huidskleur,#e8c4a0,Warm licht
+emoji,random,🎲 Random (site kiest)
+emoji,⚡,Bliksem
+emoji,🐻,Beer
+emoji,🏀,Basket
+emoji,🙌,High five
+emoji,⭐,Ster
+emoji,💪,Kracht
+emoji,🎯,Target
+emoji,😎,Cool
+emoji,✨,Sparkle
+emoji,🛡️,Schild
+emoji,👟,Sneaker
+emoji,🏆,Trofee
+emoji,🔥,Vuur
+emoji,🚀,Raket
+emoji,😄,Lachen
