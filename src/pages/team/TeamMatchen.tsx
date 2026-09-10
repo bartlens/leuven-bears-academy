@@ -1,9 +1,9 @@
 import { useOutletContext } from 'react-router-dom'
 import type { TeamOutletContext } from './TeamLayout'
 import { SectionHeader } from '../../components/SectionHeader'
-import { getMatchesForTeam } from '../../data/teamMatches'
 import { club } from '../../data/club'
 import { brusselsTodayIso } from '../../lib/calendarEvents'
+import { useTeamSheetData } from '../../sheet/TeamSheetProvider'
 
 function formatDate(iso: string) {
   return new Date(iso + 'T12:00:00').toLocaleDateString('nl-BE', {
@@ -15,8 +15,9 @@ function formatDate(iso: string) {
 
 export function TeamMatchen() {
   const { team } = useOutletContext<TeamOutletContext>()
+  const { matches: sheetMatches, source, loading } = useTeamSheetData()
   const today = brusselsTodayIso()
-  const matches = getMatchesForTeam(team.slug).sort(
+  const matches = [...sheetMatches].sort(
     (a, b) => a.dateIso.localeCompare(b.dateIso) || a.time.localeCompare(b.time),
   )
   const upcoming = matches.filter((m) => m.dateIso >= today)
@@ -27,8 +28,16 @@ export function TeamMatchen() {
       <SectionHeader
         eyebrow="Game day"
         title="Matchen"
-        subtitle={`Opkomende wedstrijden voor ${team.name} · seizoen ${club.season}. Scores worden niet verzonnen — we tonen alleen wat op de oude site stond.`}
+        subtitle={
+          source === 'live'
+            ? `Opkomende wedstrijden voor ${team.name} · seizoen ${club.season} · live uit Beheer.`
+            : `Opkomende wedstrijden voor ${team.name} · seizoen ${club.season}. Scores worden niet verzonnen — we tonen alleen wat bekend is.`
+        }
       />
+
+      {loading && (
+        <p className="mb-4 text-sm text-muted">Matchen laden uit Beheer…</p>
+      )}
 
       <section className="mb-12">
         <h2 className="mb-4 font-display text-xl font-bold text-cream">
@@ -36,7 +45,7 @@ export function TeamMatchen() {
         </h2>
         {upcoming.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-white/15 bg-ink-soft px-5 py-8 text-sm text-muted">
-            Geen opkomende wedstrijden voor deze ploeg op de oude Academy-site.
+            Geen opkomende wedstrijden voor deze ploeg.
           </p>
         ) : (
           <div className="space-y-3">

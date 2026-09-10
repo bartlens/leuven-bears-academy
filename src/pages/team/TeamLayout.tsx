@@ -1,6 +1,7 @@
 import { Link, Outlet, useParams } from 'react-router-dom'
 import { SectionHeader } from '../../components/SectionHeader'
 import { getTeamBySlug, type Team } from '../../data/teams'
+import { TeamSheetProvider } from '../../sheet/TeamSheetProvider'
 
 export type TeamOutletContext = {
   team: Team
@@ -22,5 +23,9 @@ export function TeamLayout() {
     )
   }
 
-  return <Outlet context={{ team } satisfies TeamOutletContext} />
+  return (
+    <TeamSheetProvider team={team}>
+      <Outlet context={{ team } satisfies TeamOutletContext} />
+    </TeamSheetProvider>
+  )
 }

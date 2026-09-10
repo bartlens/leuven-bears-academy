@@ -3,9 +3,11 @@ import type { TeamOutletContext } from './TeamLayout'
 import { SectionHeader } from '../../components/SectionHeader'
 import { club } from '../../data/club'
 import { groupLabels } from '../../data/teams'
+import { useTeamSheetData } from '../../sheet/TeamSheetProvider'
 
 export function TeamInfo() {
   const { team } = useOutletContext<TeamOutletContext>()
+  const { beheerUrl, aanwezigheidUrl, source } = useTeamSheetData()
 
   return (
     <div className="mx-auto max-w-6xl overflow-x-hidden px-4 py-10 sm:px-6">
@@ -69,6 +71,45 @@ export function TeamInfo() {
             </li>
           </ul>
         </article>
+
+        {(beheerUrl || aanwezigheidUrl) && (
+          <article className="rounded-3xl border border-hoop/25 bg-hoop/10 p-6 sm:p-8 lg:col-span-2">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-hoop-bright">
+              Google Sheets (ploeg)
+            </p>
+            <p className="mt-2 text-sm text-cream/90">
+              Coaches bewerken Beheer; ouders vullen aanwezigheid in. De site leest
+              Beheer publiek (Viewer-link)
+              {source === 'live' ? ' — live verbonden.' : '.'}
+            </p>
+            <ul className="mt-4 space-y-2 text-sm">
+              {beheerUrl && (
+                <li>
+                  <a
+                    href={beheerUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-semibold text-hoop-bright hover:underline"
+                  >
+                    Beheer-sheet openen →
+                  </a>
+                </li>
+              )}
+              {aanwezigheidUrl && (
+                <li>
+                  <a
+                    href={aanwezigheidUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-semibold text-hoop-bright hover:underline"
+                  >
+                    Aanwezigheid-sheet openen →
+                  </a>
+                </li>
+              )}
+            </ul>
+          </article>
+        )}
 
         <article className="rounded-3xl border border-white/10 bg-panel/80 p-6 sm:p-8 lg:col-span-2">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-hoop-bright">

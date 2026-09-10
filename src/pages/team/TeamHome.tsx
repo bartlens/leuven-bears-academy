@@ -3,8 +3,7 @@ import type { TeamOutletContext } from './TeamLayout'
 import { Logo } from '../../components/Logo'
 import { HeroTitlePeek } from '../../components/HeroTitlePeek'
 import { club } from '../../data/club'
-import { getDemoPlayersForTeam } from '../../data/demoPlayers'
-import { getNextMatch } from '../../data/teamMatches'
+import { useTeamSheetData } from '../../sheet/TeamSheetProvider'
 
 const quickLinks = [
   { path: 'spelers', label: 'Spelers', emoji: '👕', desc: 'Selectie & nummers' },
@@ -30,9 +29,8 @@ function venueLabel(venue: 'thuis' | 'uit' | 'unknown') {
 
 export function TeamHome() {
   const { team } = useOutletContext<TeamOutletContext>()
-  const next = getNextMatch(team.slug)
+  const { players, nextMatch: next } = useTeamSheetData()
   const base = `/team/${team.slug}`
-  const players = getDemoPlayersForTeam(team.slug, team.group)
   const fullName = `Leuven Bears ${team.name}`
   const tagline =
     team.note ??
@@ -47,7 +45,7 @@ export function TeamHome() {
     : {
         title: 'Seizoen',
         when: club.season,
-        where: team.trainingNote ?? 'Wedstrijdkalender volgt bij Matchen',
+        where: team.trainingNote ?? 'Wedstrijdkalender vindt bij Matchen',
       }
 
   return (

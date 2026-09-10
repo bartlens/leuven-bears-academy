@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
 import type { TeamOutletContext } from './TeamLayout'
 import { SectionHeader } from '../../components/SectionHeader'
-import { getMatchesForTeam } from '../../data/teamMatches'
 import { club } from '../../data/club'
+import { useTeamSheetData } from '../../sheet/TeamSheetProvider'
 import {
   brusselsTodayIso,
   buildTeamCalendarEvents,
@@ -28,7 +28,7 @@ function formatDayHeading(iso: string) {
 
 export function TeamKalender() {
   const { team } = useOutletContext<TeamOutletContext>()
-  const matches = getMatchesForTeam(team.slug)
+  const { matches } = useTeamSheetData()
   const trainings = team.trainings ?? []
   const todayIso = brusselsTodayIso()
   const [y, m] = todayIso.split('-').map(Number)
