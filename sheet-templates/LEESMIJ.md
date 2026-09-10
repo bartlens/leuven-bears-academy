@@ -77,3 +77,6 @@ Optioneel: trigger “bij openen” of elke 15 minuten, zodat coaches niet manue
 
 > Zonder script kan `Spelers_ref` ook met `IMPORTRANGE` — maar **nieuwe matrix-kolommen** vragen wél het script (of het lange formaat `Aanwezigheid_per_speler`).
 
+- Spelers: kies uit de keuzelijsten. `random` mag bij emoji, label, accent, move, move_label, haarstijl, haarkleur, huidskleur.
+- Kleuren: gewone namen (`blond-goud`, `bruin`, `zwart`, `licht`, …) — geen hex-codes in de sheet.
+- `move_label=random` volgt automatisch de gekozen/move-random move.

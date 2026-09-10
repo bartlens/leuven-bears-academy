@@ -1,4 +1,5 @@
 lijst,waarde,label_nl
+haarstijl,random,🎲 Random
 haarstijl,short,Kort
 haarstijl,spiky,Stekelig
 haarstijl,bowl,Bowl / pony
@@ -6,9 +7,31 @@ haarstijl,side,Zijscheiding
 haarstijl,curly,Krullen
 haarstijl,fluffy,Pluizig
 haarstijl,long,Lang
+haarkleur,random,🎲 Random
+haarkleur,blond-goud,Blond goud
+haarkleur,blond-warm,Blond warm
+haarkleur,blond-licht,Blond licht
+haarkleur,bruin,Bruin
+haarkleur,donkerbruin,Donkerbruin
+haarkleur,zwart,Zwart
+haarkleur,roodbruin,Roodbruin
+haarkleur,grijs,Grijs
+huidskleur,random,🎲 Random
+huidskleur,zeer-licht,Zeer licht
+huidskleur,licht,Licht
+huidskleur,warm-licht,Warm licht
+huidskleur,warm-medium,Warm medium
+huidskleur,medium,Medium
+huidskleur,donker,Donker
+label,random,🎲 Random
+label,Guard,Guard
+label,Forward,Forward
+label,Center,Center
+accent,random,🎲 Random
 accent,orange,Oranje
 accent,bear,Bear grijs
 accent,warm,Warm
+move,random,🎲 Random
 move,arm-roll,Arm-roll
 move,finger-spin,Vingerspin
 move,between-legs,Tussenbenen
@@ -22,6 +45,7 @@ move,shoulder-roll,Schouder-roll
 move,layup,Lay-up
 move,behind-head,No-look
 move,spin-move,Spin-move
+move_label,random,🎲 Random (volgt move)
 thuis_uit,thuis,Thuis
 thuis_uit,uit,Uit
 status_match,upcoming,Gepland
@@ -37,16 +61,6 @@ dag,donderdag,Donderdag
 dag,vrijdag,Vrijdag
 dag,zaterdag,Zaterdag
 dag,zondag,Zondag
-haarkleur,#d4b45a,Blond goud
-haarkleur,#e6c870,Blond warm
-haarkleur,#f0d078,Blond licht
-haarkleur,#1f1410,Zwart/bruin donker
-haarkleur,#1a1a1a,Zwart
-haarkleur,#5c3d24,Bruin
-huidskleur,#e8b48a,Warm medium
-huidskleur,#f5c7a1,Licht
-huidskleur,#f8d4b8,Zeer licht
-huidskleur,#e8c4a0,Warm licht
 emoji,random,🎲 Random (site kiest)
 emoji,⚡,Bliksem
 emoji,🐻,Beer
