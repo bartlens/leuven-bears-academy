@@ -115,3 +115,9 @@ export function playHihiGiggle(seed = 1): void {
     playHihiTone(audio, audio.currentTime + 0.02, seed)
   })
 }
+
+/** Soft tap feedback for PlayerCard (reuses hihi stub — full U10 SFX not ported). */
+export function playPlayerClickSound(player: { id?: string; number?: number }): void {
+  const seed = player.number ?? (player.id ? player.id.length : 1)
+  playHihiGiggle(seed)
+}

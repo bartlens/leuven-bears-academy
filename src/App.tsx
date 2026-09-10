@@ -1,5 +1,6 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { Navbar } from './components/Navbar'
+import { TeamNavbar } from './components/TeamNavbar'
 import { Footer } from './components/Footer'
 import { Home } from './pages/Home'
 import { Teams } from './pages/Teams'
@@ -18,34 +19,47 @@ import { TeamKalender } from './pages/team/TeamKalender'
 import { TeamEvenementen } from './pages/team/TeamEvenementen'
 import { TeamInfo } from './pages/team/TeamInfo'
 
+function isTeamPath(pathname: string) {
+  return /^\/team\/[^/]+/.test(pathname)
+}
+
+function AppChrome() {
+  const { pathname } = useLocation()
+  const isTeamRoute = isTeamPath(pathname)
+
+  return (
+    <div className="flex min-h-screen flex-col">
+      {isTeamRoute ? <TeamNavbar /> : <Navbar />}
+      <main className="flex-1">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/teams" element={<Teams />} />
+          <Route path="/team/:slug" element={<TeamLayout />}>
+            <Route index element={<TeamHome />} />
+            <Route path="spelers" element={<TeamSpelers />} />
+            <Route path="trainingen" element={<TeamTrainingen />} />
+            <Route path="matchen" element={<TeamMatchen />} />
+            <Route path="kalender" element={<TeamKalender />} />
+            <Route path="evenementen" element={<TeamEvenementen />} />
+            <Route path="info" element={<TeamInfo />} />
+          </Route>
+          <Route path="/nieuws" element={<Nieuws />} />
+          <Route path="/nieuws/:slug" element={<NieuwsDetail />} />
+          <Route path="/events" element={<Events />} />
+          <Route path="/faq" element={<Faq />} />
+          <Route path="/lbow" element={<Lbow />} />
+          <Route path="/info" element={<Info />} />
+        </Routes>
+      </main>
+      <Footer />
+    </div>
+  )
+}
+
 export default function App() {
   return (
     <BrowserRouter>
-      <div className="flex min-h-screen flex-col">
-        <Navbar />
-        <main className="flex-1">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/teams" element={<Teams />} />
-            <Route path="/team/:slug" element={<TeamLayout />}>
-              <Route index element={<TeamHome />} />
-              <Route path="spelers" element={<TeamSpelers />} />
-              <Route path="trainingen" element={<TeamTrainingen />} />
-              <Route path="matchen" element={<TeamMatchen />} />
-              <Route path="kalender" element={<TeamKalender />} />
-              <Route path="evenementen" element={<TeamEvenementen />} />
-              <Route path="info" element={<TeamInfo />} />
-            </Route>
-            <Route path="/nieuws" element={<Nieuws />} />
-            <Route path="/nieuws/:slug" element={<NieuwsDetail />} />
-            <Route path="/events" element={<Events />} />
-            <Route path="/faq" element={<Faq />} />
-            <Route path="/lbow" element={<Lbow />} />
-            <Route path="/info" element={<Info />} />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
+      <AppChrome />
     </BrowserRouter>
   )
 }
