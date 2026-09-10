@@ -58,3 +58,22 @@ Google kan tabs **tegen bewerken** beschermen, maar ouders met toegang tot het b
 - `zichtbaar=nee` verbergt op de site zonder te wissen.
 - Emoji: vaste keuze of `random`.
 - Aanwezigheid: alleen J / N / ? (of ✅ ❌ ❓).
+
+## Spelers sync (Beheer → Aanwezigheid)
+
+Voeg spelers **alleen** toe in Beheer → tab `Spelers`.
+
+Automatisch overnemen in Aanwezigheid:
+
+1. Zet in Aanwezigheid → `Uitleg` het veld `beheer_sheet_id` (ID uit de Beheer-URL).
+2. Extensies → Apps Script → plak `sheet-templates/apps-script/syncSpelersFromBeheer.gs`.
+3. Run **Spelers syncen vanuit Beheer** (menu *Academy sync*, of de functie `syncSpelersFromBeheer`).
+4. Resultaat:
+   - `Spelers_ref` wordt bijgewerkt
+   - matrix-tab `Aanwezigheid` krijgt nieuwe kolommen (`#nummer Naam`)
+   - `Aanwezigheid_per_speler` krijgt ontbrekende rijen (sessie × speler)
+
+Optioneel: trigger “bij openen” of elke 15 minuten, zodat coaches niet manueel hoeven te syncen.
+
+> Zonder script kan `Spelers_ref` ook met `IMPORTRANGE` — maar **nieuwe matrix-kolommen** vragen wél het script (of het lange formaat `Aanwezigheid_per_speler`).
+

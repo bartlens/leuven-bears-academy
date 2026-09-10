@@ -1,4 +1,4 @@
-nummer,voornaam,kolom_header,actief
-1,Alfred,#1 Alfred,ja
-4,Felix,#4 Felix,ja
-12,Thomas,#12 Thomas,ja
+nummer,voornaam,kolom_header,actief,_formule_hint
+1,Alfred,#1 Alfred,ja,"Vervang deze tab door formules: A2=IMPORTRANGE(beheer;""Spelers!A2:A"") B2=IMPORTRANGE(...B) — of run Apps Script syncSpelersFromBeheer"
+4,Felix,#4 Felix,ja,
+12,Thomas,#12 Thomas,ja,

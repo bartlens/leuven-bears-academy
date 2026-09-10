@@ -1,6 +1,8 @@
 veld,waarde
 doel,Ouders/spelers/coaches duiden aan of iemand komt op training of match
 wie_mag_bewerken,Iedereen met de link (of expliciet uitgenodigd)
-wie_ziet_beheer,Niemand via deze sheet — beheer staat in de aparte Beheer-sheet
-tips,"Zet J / N / ? of ✅ / ❌ / ❓. Leeg = nog niet ingevuld. Wijzig alleen jouw kind/rij."
+sync_spelers,"Spelers komen AUTOMATISCH uit de Beheer-sheet (tab Spelers). Voeg spelers dus ALLEEN toe in Beheer — niet hier."
+sync_hoe,"1) Zet beheer_sheet_id hieronder. 2) Open Extensies → Apps Script → plak syncSpelers.gs → voer syncSpelersFromBeheer eenmaal uit + trigger. Of gebruik de formules op Spelers_ref."
+beheer_sheet_id,BEHEER_SHEET_ID
 beheer_sheet_url,https://docs.google.com/spreadsheets/d/BEHEER_SHEET_ID/edit
+tips,"Zet J / N / ? of ✅ / ❌ / ❓. Leeg = nog niet ingevuld. Wijzig alleen de cel van jouw kind."
