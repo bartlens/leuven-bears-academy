@@ -45,7 +45,6 @@ move,shoulder-roll,Schouder-roll
 move,layup,Lay-up
 move,behind-head,No-look
 move,spin-move,Spin-move
-move_label,random,🎲 Random (volgt move)
 thuis_uit,thuis,Thuis
 thuis_uit,uit,Uit
 status_match,upcoming,Gepland

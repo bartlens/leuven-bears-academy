@@ -88,7 +88,6 @@ export function resolvePlayerAppearance(
     emoji?: string
     accent?: string
     move?: string
-    moveLabel?: string
     hairStyle?: string
     hairColor?: string
     skinColor?: string
@@ -100,9 +99,8 @@ export function resolvePlayerAppearance(
   const move = isRandom(input.move)
     ? pick(MOVES, seed, 'move')
     : (String(input.move) as (typeof MOVES)[number])
-  const moveLabel = isRandom(input.moveLabel)
-    ? (MOVE_LABELS[move as (typeof MOVES)[number]] ?? String(input.moveLabel ?? move))
-    : String(input.moveLabel)
+  const moveLabel =
+    MOVE_LABELS[move as (typeof MOVES)[number]] ?? String(move)
   const hairStyle = isRandom(input.hairStyle)
     ? pick(HAIR_STYLES, seed, 'hairStyle')
     : String(input.hairStyle)
