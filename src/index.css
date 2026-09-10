@@ -88,3 +88,321 @@ body {
     linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
 }
+
+
+/* ========== HERO TITLE FUN MODES (party / wave / dribble / dunk) ========== */
+.hero-title-peek {
+  position: relative;
+  overflow: visible;
+}
+
+.hero-title-peek__hit {
+  overflow: visible;
+}
+
+.hero-title-peek__cat {
+  position: relative;
+  isolation: isolate;
+}
+
+.hero-title-peek__stage {
+  left: 50%;
+  top: 50%;
+  width: 160%;
+  height: 280%;
+  transform: translate(-50%, -50%);
+}
+
+.hero-title-peek__fig {
+  position: absolute;
+  display: block;
+  width: 3.4rem;
+  height: 3.9rem;
+  pointer-events: none;
+  transform-origin: 50% 100%;
+  will-change: transform, opacity;
+}
+
+.hero-title-peek__fig--party,
+.hero-title-peek__fig--wave,
+.hero-title-peek__fig--dunk-stair,
+.hero-title-peek__fig--dunk-crowd {
+  width: 3.1rem;
+  height: 3.55rem;
+  z-index: 0;
+  transform: translate(-50%, -50%) scale(var(--fig-scale, 1));
+}
+
+.hero-title-peek__fig--dribble {
+  width: 3.2rem;
+  height: 3.65rem;
+  z-index: 1;
+  left: 0;
+}
+
+.hero-title-peek__fig--dunk-climber {
+  width: 3.2rem;
+  height: 3.65rem;
+  z-index: 3;
+}
+
+.hero-title-peek__svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  animation: none !important;
+}
+
+.hero-title-peek__svg .pf-char,
+.hero-title-peek__svg .pf-ball,
+.hero-title-peek__svg .pf-arm-l,
+.hero-title-peek__svg .pf-arm-r,
+.hero-title-peek__svg .pf-legs,
+.hero-title-peek__svg .pf-head {
+  animation: none !important;
+}
+
+.hero-title-peek__svg .pf-glow,
+.hero-title-peek__svg .pf-shadow,
+.hero-title-peek__svg .pf-rim {
+  display: none;
+}
+
+/* ~3.6s visual; JS clears at 3800ms */
+@keyframes hero-party-pop {
+  0% { opacity: 0; transform: translate(-50%, -30%) scale(calc(var(--fig-scale, 1) * 0.4)); }
+  12% { opacity: 1; transform: translate(-50%, -55%) scale(calc(var(--fig-scale, 1) * 1.08)); }
+  28% { transform: translate(-50%, -48%) scale(var(--fig-scale, 1)) rotate(-8deg); }
+  42% { transform: translate(-50%, -62%) scale(calc(var(--fig-scale, 1) * 1.06)) rotate(8deg); }
+  58% { transform: translate(-50%, -50%) scale(var(--fig-scale, 1)) rotate(-4deg); }
+  74% { opacity: 1; transform: translate(-50%, -58%) scale(calc(var(--fig-scale, 1) * 1.04)) rotate(5deg); }
+  100% { opacity: 0; transform: translate(-50%, -18%) scale(calc(var(--fig-scale, 1) * 0.5)); }
+}
+
+@keyframes hero-party-tumble {
+  0% { opacity: 0; transform: translate(-50%, -30%) scale(calc(var(--fig-scale, 1) * 0.4)) rotate(0deg); }
+  10% { opacity: 1; transform: translate(-50%, -55%) scale(calc(var(--fig-scale, 1) * 1.05)) rotate(-6deg); }
+  22% { transform: translate(-50%, -48%) scale(var(--fig-scale, 1)) rotate(12deg); }
+  34% { transform: translate(-42%, -20%) scale(var(--fig-scale, 1)) rotate(78deg); }
+  46% { transform: translate(-38%, 8%) scale(calc(var(--fig-scale, 1) * 0.95)) rotate(98deg); }
+  58% { transform: translate(-40%, 6%) scale(calc(var(--fig-scale, 1) * 0.92)) rotate(92deg); }
+  70% { opacity: 1; transform: translate(-48%, -35%) scale(var(--fig-scale, 1)) rotate(-18deg); }
+  82% { transform: translate(-50%, -52%) scale(calc(var(--fig-scale, 1) * 1.02)) rotate(6deg); }
+  100% { opacity: 0; transform: translate(-50%, -15%) scale(calc(var(--fig-scale, 1) * 0.5)) rotate(0deg); }
+}
+
+/* Mexican wave: stand up → arms up → sit */
+@keyframes hero-mex-wave {
+  0% { opacity: 0; transform: translate(-50%, -20%) scale(calc(var(--fig-scale, 1) * 0.7)); }
+  8% { opacity: 1; transform: translate(-50%, -45%) scale(var(--fig-scale, 1)); }
+  22% { transform: translate(-50%, -78%) scale(calc(var(--fig-scale, 1) * 1.12)) rotate(-4deg); }
+  38% { transform: translate(-50%, -55%) scale(var(--fig-scale, 1)) rotate(3deg); }
+  55% { transform: translate(-50%, -72%) scale(calc(var(--fig-scale, 1) * 1.08)); }
+  78% { opacity: 1; transform: translate(-50%, -48%) scale(var(--fig-scale, 1)); }
+  100% { opacity: 0; transform: translate(-50%, -15%) scale(calc(var(--fig-scale, 1) * 0.6)); }
+}
+
+@keyframes hero-dribble-ltr {
+  0% { opacity: 0; left: -8%; transform: translateY(0) scale(var(--fig-scale, 1)) rotate(-4deg); }
+  8% { opacity: 1; }
+  20% { transform: translateY(-10px) scale(var(--fig-scale, 1)) rotate(5deg); }
+  40% { transform: translateY(4px) scale(var(--fig-scale, 1)) rotate(-6deg); }
+  60% { transform: translateY(-12px) scale(var(--fig-scale, 1)) rotate(4deg); }
+  80% { opacity: 1; transform: translateY(2px) scale(var(--fig-scale, 1)) rotate(-3deg); }
+  100% { opacity: 0; left: 108%; transform: translateY(-6px) scale(calc(var(--fig-scale, 1) * 0.85)); }
+}
+
+@keyframes hero-dribble-rtl {
+  0% { opacity: 0; left: 108%; transform: translateY(0) scale(var(--fig-scale, 1)) scaleX(-1) rotate(-4deg); }
+  8% { opacity: 1; }
+  20% { transform: translateY(-10px) scale(var(--fig-scale, 1)) scaleX(-1) rotate(5deg); }
+  40% { transform: translateY(4px) scale(var(--fig-scale, 1)) scaleX(-1) rotate(-6deg); }
+  60% { transform: translateY(-12px) scale(var(--fig-scale, 1)) scaleX(-1) rotate(4deg); }
+  80% { opacity: 1; transform: translateY(2px) scale(var(--fig-scale, 1)) scaleX(-1) rotate(-3deg); }
+  100% { opacity: 0; left: -8%; transform: translateY(-6px) scale(calc(var(--fig-scale, 1) * 0.85)) scaleX(-1); }
+}
+
+/* Dribble tumble mid-run */
+@keyframes hero-dribble-fall-ltr {
+  0% { opacity: 0; left: -8%; transform: translateY(0) scale(var(--fig-scale, 1)) rotate(0deg); }
+  10% { opacity: 1; left: 18%; transform: translateY(-8px) rotate(-6deg); }
+  28% { left: 38%; transform: translateY(12px) rotate(85deg); }
+  40% { left: 42%; transform: translateY(18px) rotate(95deg); }
+  55% { left: 48%; transform: translateY(-4px) rotate(-12deg); }
+  75% { opacity: 1; left: 78%; transform: translateY(-10px) rotate(4deg); }
+  100% { opacity: 0; left: 108%; transform: translateY(0) scale(calc(var(--fig-scale, 1) * 0.85)); }
+}
+
+@keyframes hero-dribble-fall-rtl {
+  0% { opacity: 0; left: 108%; transform: translateY(0) scale(var(--fig-scale, 1)) scaleX(-1) rotate(0deg); }
+  10% { opacity: 1; left: 82%; transform: translateY(-8px) scaleX(-1) rotate(-6deg); }
+  28% { left: 62%; transform: translateY(12px) scaleX(-1) rotate(85deg); }
+  40% { left: 58%; transform: translateY(18px) scaleX(-1) rotate(95deg); }
+  55% { left: 52%; transform: translateY(-4px) scaleX(-1) rotate(-12deg); }
+  75% { opacity: 1; left: 22%; transform: translateY(-10px) scaleX(-1) rotate(4deg); }
+  100% { opacity: 0; left: -8%; transform: translateY(0) scale(calc(var(--fig-scale, 1) * 0.85)) scaleX(-1); }
+}
+
+/* Stair body holds position with a soft bob */
+@keyframes hero-dunk-stair-hold {
+  0% { opacity: 0; transform: translate(-50%, -40%) scale(calc(var(--fig-scale, 1) * 0.5)); }
+  12% { opacity: 1; transform: translate(-50%, -50%) scale(var(--fig-scale, 1)); }
+  50% { transform: translate(-50%, -52%) scale(var(--fig-scale, 1)); }
+  85% { opacity: 1; transform: translate(-50%, -50%) scale(var(--fig-scale, 1)); }
+  100% { opacity: 0; transform: translate(-50%, -35%) scale(calc(var(--fig-scale, 1) * 0.6)); }
+}
+
+/* Climber: climb steps via --dunk-x/y keyframes set per step in JS as left/top animation… use translate along path */
+@keyframes hero-dunk-climb {
+  /* Climb stair (small→large), dunk, then look at viewer */
+  0% { opacity: 0; left: 22%; top: 82%; transform: translate(-50%, -50%) scale(calc(var(--fig-scale, 1) * 0.7)); }
+  8% { opacity: 1; left: 28%; top: 78%; transform: translate(-50%, -50%) scale(var(--fig-scale, 1)); }
+  20% { left: 36%; top: 68%; transform: translate(-50%, -70%) scale(var(--fig-scale, 1)) rotate(-8deg); }
+  28% { left: 40%; top: 64%; transform: translate(-50%, -50%) scale(var(--fig-scale, 1)); }
+  38% { left: 48%; top: 56%; transform: translate(-50%, -72%) scale(var(--fig-scale, 1)) rotate(6deg); }
+  46% { left: 52%; top: 52%; transform: translate(-50%, -50%) scale(var(--fig-scale, 1)); }
+  56% { left: 58%; top: 46%; transform: translate(-50%, -80%) scale(calc(var(--fig-scale, 1) * 1.05)) rotate(-4deg); }
+  /* dunk slam */
+  66% { left: 72%; top: 22%; transform: translate(-50%, -50%) scale(calc(var(--fig-scale, 1) * 1.18)) rotate(14deg); }
+  74% { left: 70%; top: 32%; transform: translate(-50%, -50%) scale(var(--fig-scale, 1)) rotate(0deg); }
+  /* hier kijken — face viewer */
+  84% { left: 62%; top: 40%; transform: translate(-50%, -50%) scale(calc(var(--fig-scale, 1) * 1.12)) rotate(-2deg); }
+  92% { opacity: 1; left: 60%; top: 42%; transform: translate(-50%, -50%) scale(var(--fig-scale, 1)); }
+  100% { opacity: 0; left: 58%; top: 50%; transform: translate(-50%, -50%) scale(calc(var(--fig-scale, 1) * 0.7)); }
+}
+
+@keyframes hero-dunk-crowd-cheer {
+  0% { opacity: 0; transform: translate(-50%, -30%) scale(calc(var(--fig-scale, 1) * 0.4)); }
+  15% { opacity: 0; }
+  45% { opacity: 0; transform: translate(-50%, -40%) scale(calc(var(--fig-scale, 1) * 0.5)); }
+  55% { opacity: 1; transform: translate(-50%, -60%) scale(calc(var(--fig-scale, 1) * 1.1)) rotate(-8deg); }
+  68% { transform: translate(-50%, -52%) scale(var(--fig-scale, 1)) rotate(8deg); }
+  82% { opacity: 1; transform: translate(-50%, -65%) scale(calc(var(--fig-scale, 1) * 1.06)) rotate(-4deg); }
+  100% { opacity: 0; transform: translate(-50%, -20%) scale(calc(var(--fig-scale, 1) * 0.5)); }
+}
+
+@keyframes hero-peek-fade {
+  0% { opacity: 0; }
+  25% { opacity: 1; }
+  75% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes hero-confetti-float {
+  0% { opacity: 0; transform: translateY(8px) scale(0.6) rotate(-10deg); }
+  20% { opacity: 1; transform: translateY(-12px) scale(1) rotate(8deg); }
+  70% { opacity: 0.9; transform: translateY(-36px) scale(1.05) rotate(-6deg); }
+  100% { opacity: 0; transform: translateY(-56px) scale(0.8) rotate(12deg); }
+}
+
+@keyframes hero-laugh-bob {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(0.92); }
+}
+
+.hero-title-peek__fig--party {
+  animation: hero-party-pop 3.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hero-title-peek__fig--party.is-falling {
+  animation: hero-party-tumble 3.6s cubic-bezier(0.34, 1.15, 0.45, 1) both;
+}
+
+.hero-title-peek__fig--wave {
+  animation: hero-mex-wave 3.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hero-title-peek__fig--wave.is-falling {
+  animation: hero-party-tumble 3.6s cubic-bezier(0.34, 1.15, 0.45, 1) both;
+}
+
+.hero-title-peek__fig--dribble-ltr {
+  animation: hero-dribble-ltr 3.6s cubic-bezier(0.4, 0.1, 0.3, 1) both;
+}
+
+.hero-title-peek__fig--dribble-rtl {
+  animation: hero-dribble-rtl 3.6s cubic-bezier(0.4, 0.1, 0.3, 1) both;
+}
+
+.hero-title-peek__fig--dribble-ltr.is-falling {
+  animation: hero-dribble-fall-ltr 3.6s cubic-bezier(0.4, 0.1, 0.3, 1) both;
+}
+
+.hero-title-peek__fig--dribble-rtl.is-falling {
+  animation: hero-dribble-fall-rtl 3.6s cubic-bezier(0.4, 0.1, 0.3, 1) both;
+}
+
+.hero-title-peek__fig--dunk-stair {
+  animation: hero-dunk-stair-hold 3.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hero-title-peek__fig--dunk-climber {
+  animation: hero-dunk-climb 3.6s cubic-bezier(0.34, 1.1, 0.45, 1) both;
+}
+
+.hero-title-peek__fig--dunk-crowd {
+  animation: hero-dunk-crowd-cheer 3.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hero-title-peek__fig.is-reduced {
+  animation: hero-peek-fade 0.45s ease both !important;
+}
+
+.hero-title-peek__confetti {
+  position: absolute;
+  top: 0;
+  font-size: 0.95rem;
+  line-height: 1;
+  z-index: 2;
+  pointer-events: none;
+  animation: hero-confetti-float 3.2s ease-out both;
+}
+
+.hero-title-peek__fig.is-laughing .pf-eyes > ellipse:not(.pf-lid) {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scaleY(0.22);
+}
+
+.hero-title-peek__fig.is-laughing .pf-eye-shine {
+  opacity: 0;
+}
+
+.hero-title-peek__fig.is-laughing .pf-lid {
+  opacity: 0.95;
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scaleY(8);
+}
+
+.hero-title-peek__fig.is-laughing .pf-smile {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: translateY(1px) scaleY(1.45) scaleX(1.08);
+  stroke-width: 2.4;
+}
+
+.hero-title-peek__fig.is-laughing .pf-head {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: hero-laugh-bob 0.35s ease-in-out 3 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-title-peek__fig--party,
+  .hero-title-peek__fig--party.is-falling,
+  .hero-title-peek__fig--wave,
+  .hero-title-peek__fig--dribble-ltr,
+  .hero-title-peek__fig--dribble-rtl,
+  .hero-title-peek__fig--dunk-stair,
+  .hero-title-peek__fig--dunk-climber,
+  .hero-title-peek__fig--dunk-crowd,
+  .hero-title-peek__confetti,
+  .hero-title-peek__fig.is-laughing .pf-head {
+    animation: none !important;
+  }
+
+  .hero-title-peek__fig.is-reduced {
+    animation: hero-peek-fade 0.35s ease both !important;
+  }
+}

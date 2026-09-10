@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Logo } from '../components/Logo'
+import { HeroTitlePeek } from '../components/HeroTitlePeek'
+import { demoPlayers } from '../data/demoPlayers'
 import { NewsCard } from '../components/NewsCard'
 import { club } from '../data/club'
 import { news } from '../data/news'
@@ -24,10 +26,7 @@ export function Home() {
             <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-hoop/40 bg-hoop/15 px-3 py-1 text-xs font-bold uppercase tracking-wider text-hoop-bright">
               Seizoen {club.season}
             </span>
-            <h1 className="font-display text-4xl font-bold tracking-tight text-cream sm:text-5xl lg:text-6xl">
-              Leuven Bears{' '}
-              <span className="text-hoop-bright">Academy</span>
-            </h1>
+            <HeroTitlePeek name="Leuven Bears" category="Academy" players={demoPlayers} />
             <p className="mt-5 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
               {club.mission}
             </p>
