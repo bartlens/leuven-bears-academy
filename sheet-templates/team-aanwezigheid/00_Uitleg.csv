@@ -1,0 +1,6 @@
+veld,waarde
+doel,Ouders/spelers/coaches duiden aan of iemand komt op training of match
+wie_mag_bewerken,Iedereen met de link (of expliciet uitgenodigd)
+wie_ziet_beheer,Niemand via deze sheet — beheer staat in de aparte Beheer-sheet
+tips,"Zet J / N / ? of ✅ / ❌ / ❓. Leeg = nog niet ingevuld. Wijzig alleen jouw kind/rij."
+beheer_sheet_url,https://docs.google.com/spreadsheets/d/BEHEER_SHEET_ID/edit
