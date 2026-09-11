@@ -1,16 +1,41 @@
 /**
- * Plak in BEHEER: Extensies → Apps Script → plak → run setupSpelersDropdowns().
+ * BEHEER-spreadsheet (gedeeld met coaches):
+ * Extensies → Apps Script → plak dit bestand → opslaan.
  *
- * - Geen kolommen volgorde of zichtbaar (worden verwijderd als ze bestaan).
- * - Volgorde op de site = nummer.
- * - Dropdowns ALLEEN op rijen met nummer en/of voornaam (vanaf rij 2).
- * - Lege rijen: geen dropdowns.
+ * Eerste keer (als EIGENAAR / Bart):
+ * 1. Run installSpelersTriggers() eenmaal → Google-rechten toestaan.
+ *    Installable onEdit loopt als JOUW account, ook als een andere coach typt.
+ * 2. Run setupSpelersDropdowns() eenmaal (huidige rijen netjes zetten).
+ *
+ * Andere coaches: niks installeren; nummer + voornaam invullen volstaat.
+ *
+ * - Geen kolommen volgorde / zichtbaar.
+ * - Dropdowns alleen op rijen met nummer en/of voornaam.
+ * - Nieuwe rij → random + dropdowns; rij leeg → dropdowns weg.
  */
+
 var SPELERS_DROPDOWN_COLS = [
   'label', 'emoji', 'accent', 'move', 'haarstijl', 'haarkleur', 'huidskleur',
 ];
 var SPELERS_ROW_START = 2;
 var SPELERS_ROW_END = 200;
+
+/** Run once as sheet owner — authorizes + installable onEdit for all editors. */
+function installSpelersTriggers() {
+  var ss = SpreadsheetApp.getActive();
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === 'onEditSpelersDefaults') {
+      ScriptApp.deleteTrigger(t);
+    }
+  });
+  ScriptApp.newTrigger('onEditSpelersDefaults')
+    .forSpreadsheet(ss)
+    .onEdit()
+    .create();
+  SpreadsheetApp.getUi().alert(
+    'Installable onEdit gezet. Andere coaches krijgen nu ook automatisch dropdowns bij een nieuwe speler.',
+  );
+}
 
 function setupSpelersDropdowns() {
   var ss = SpreadsheetApp.getActive();
@@ -38,12 +63,11 @@ function setupSpelersDropdowns() {
 
   SpreadsheetApp.getUi().alert(
     'Spelers-dropdowns gezet op ' + filled +
-    ' gevulde rij(en) vanaf rij 2. Lege rijen zonder dropdowns. Kolommen volgorde/zichtbaar verwijderd indien aanwezig.'
+      ' gevulde rij(en). Lege rijen zonder dropdowns.',
   );
 }
 
-function onEdit(e) { onEditSpelersDefaults(e); }
-
+/** Installable handler — runs as the owner who installed the trigger. */
 function onEditSpelersDefaults(e) {
   if (!e || !e.range) return;
   var sheet = e.range.getSheet();
@@ -58,8 +82,14 @@ function onEditSpelersDefaults(e) {
 
   if (!rowHasPlayer_(sheet, headers, row)) {
     clearDropdownsOnRow_(sheet, headers, row);
+    SPELERS_DROPDOWN_COLS.forEach(function (colName) {
+      var colIdx = headers.indexOf(colName);
+      if (colIdx < 0) return;
+      sheet.getRange(row, colIdx + 1).clearContent();
+    });
     return;
   }
+
   applyDropdownsToRow_(sheet, headers, rules, row);
   fillEmptyAppearanceWithRandomOnRow_(sheet, headers, row);
 }
@@ -72,8 +102,12 @@ function deleteColumnIfPresent_(sheet, name) {
 }
 
 function getHeaders_(sheet) {
-  return sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1))
-    .getValues()[0].map(function (h) { return String(h || '').trim(); });
+  return sheet
+    .getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1))
+    .getValues()[0]
+    .map(function (h) {
+      return String(h || '').trim();
+    });
 }
 
 function rowHasPlayer_(sheet, headers, row) {
@@ -120,7 +154,8 @@ function clearDropdownValidations_(sheet, headers) {
   SPELERS_DROPDOWN_COLS.forEach(function (colName) {
     var colIdx = headers.indexOf(colName);
     if (colIdx < 0) return;
-    sheet.getRange(SPELERS_ROW_START, colIdx + 1, SPELERS_ROW_END, colIdx + 1)
+    sheet
+      .getRange(SPELERS_ROW_START, colIdx + 1, SPELERS_ROW_END, colIdx + 1)
       .clearDataValidations();
   });
 }
@@ -150,6 +185,7 @@ function readKeuzelijsten_(sheet) {
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('Academy Beheer')
-    .addItem('Spelers-dropdowns zetten', 'setupSpelersDropdowns')
+    .addItem('Spelers-dropdowns zetten (nu)', 'setupSpelersDropdowns')
+    .addItem('Auto-dropdowns voor alle coaches (1×)', 'installSpelersTriggers')
     .addToUi();
 }
