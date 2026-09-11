@@ -1,17 +1,11 @@
 /**
- * BEHEER-spreadsheet (gedeeld met coaches):
- * Extensies → Apps Script → plak dit bestand → opslaan.
+ * BEHEER Spelers — chip-dropdowns voor alle coaches.
  *
- * Eerste keer (als EIGENAAR / Bart):
- * 1. Run installSpelersTriggers() eenmaal → Google-rechten toestaan.
- *    Installable onEdit loopt als JOUW account, ook als een andere coach typt.
- * 2. Run setupSpelersDropdowns() eenmaal (huidige rijen netjes zetten).
+ * Extensies → Apps Script → plak → opslaan.
+ * 1× installSpelersTriggers() (rechten), 1× setupSpelersDropdowns().
  *
- * Andere coaches: niks installeren; nummer + voornaam invullen volstaat.
- *
- * - Geen kolommen volgorde / zichtbaar.
- * - Dropdowns alleen op rijen met nummer en/of voornaam.
- * - Nieuwe rij → random + dropdowns; rij leeg → dropdowns weg.
+ * Chip-stijl (grijze pills) blijft behouden door validatie+opmaak te
+ * KOPIËREN van een bestaande rij — niet via setDataValidation (dat = pijltjes).
  */
 
 var SPELERS_DROPDOWN_COLS = [
@@ -20,7 +14,6 @@ var SPELERS_DROPDOWN_COLS = [
 var SPELERS_ROW_START = 2;
 var SPELERS_ROW_END = 200;
 
-/** Run once as sheet owner — authorizes + installable onEdit for all editors. */
 function installSpelersTriggers() {
   var ss = SpreadsheetApp.getActive();
   ScriptApp.getProjectTriggers().forEach(function (t) {
@@ -33,7 +26,7 @@ function installSpelersTriggers() {
     .onEdit()
     .create();
   SpreadsheetApp.getUi().alert(
-    'Installable onEdit gezet. Andere coaches krijgen nu ook automatisch dropdowns bij een nieuwe speler.',
+    'Installable onEdit gezet. Nieuwe spelers krijgen automatisch chip-dropdowns.',
   );
 }
 
@@ -47,27 +40,37 @@ function setupSpelersDropdowns() {
   deleteColumnIfPresent_(spelers, 'volgorde');
   deleteColumnIfPresent_(spelers, 'zichtbaar');
 
-  var lists = readKeuzelijsten_(keuzes);
   var headers = getHeaders_(spelers);
+  var lists = readKeuzelijsten_(keuzes);
   var rules = buildRules_(lists, headers);
 
-  clearDropdownValidations_(spelers, headers);
+  // Template EERST kiezen — nooit alle chips wissen vóór de copy.
+  var templateRow = findChipTemplateRow_(spelers, headers, -1);
+  if (!templateRow) {
+    seedPlainValidationOnFirstPlayer_(spelers, headers, rules);
+    templateRow = findChipTemplateRow_(spelers, headers, -1);
+  }
+  if (!templateRow) {
+    SpreadsheetApp.getUi().alert('Geen spelersrij om dropdowns van te kopiëren.');
+    return;
+  }
 
   var filled = 0;
   for (var row = SPELERS_ROW_START; row <= SPELERS_ROW_END; row++) {
-    if (!rowHasPlayer_(spelers, headers, row)) continue;
-    applyDropdownsToRow_(spelers, headers, rules, row);
+    if (!rowHasPlayer_(spelers, headers, row)) {
+      clearDropdownsOnRow_(spelers, headers, row);
+      continue;
+    }
+    applyChipDropdownsFromTemplate_(spelers, headers, templateRow, row);
     fillEmptyAppearanceWithRandomOnRow_(spelers, headers, row);
     filled++;
   }
 
   SpreadsheetApp.getUi().alert(
-    'Spelers-dropdowns gezet op ' + filled +
-      ' gevulde rij(en). Lege rijen zonder dropdowns.',
+    'Chip-dropdowns gezet op ' + filled + ' gevulde rij(en), gekopieerd van rij ' + templateRow + '.',
   );
 }
 
-/** Installable handler — runs as the owner who installed the trigger. */
 function onEditSpelersDefaults(e) {
   if (!e || !e.range) return;
   var sheet = e.range.getSheet();
@@ -75,10 +78,7 @@ function onEditSpelersDefaults(e) {
   var row = e.range.getRow();
   if (row < SPELERS_ROW_START || row > SPELERS_ROW_END) return;
 
-  var keuzes = SpreadsheetApp.getActive().getSheetByName('Keuzelijsten');
-  if (!keuzes) return;
   var headers = getHeaders_(sheet);
-  var rules = buildRules_(readKeuzelijsten_(keuzes), headers);
 
   if (!rowHasPlayer_(sheet, headers, row)) {
     clearDropdownsOnRow_(sheet, headers, row);
@@ -90,7 +90,17 @@ function onEditSpelersDefaults(e) {
     return;
   }
 
-  applyDropdownsToRow_(sheet, headers, rules, row);
+  var templateRow = findChipTemplateRow_(sheet, headers, row);
+  if (!templateRow) {
+    var keuzes = SpreadsheetApp.getActive().getSheetByName('Keuzelijsten');
+    if (!keuzes) return;
+    var rules = buildRules_(readKeuzelijsten_(keuzes), headers);
+    seedPlainValidationOnFirstPlayer_(sheet, headers, rules);
+    templateRow = findChipTemplateRow_(sheet, headers, row);
+  }
+  if (!templateRow) return;
+
+  applyChipDropdownsFromTemplate_(sheet, headers, templateRow, row);
   fillEmptyAppearanceWithRandomOnRow_(sheet, headers, row);
 }
 
@@ -134,29 +144,50 @@ function buildRules_(lists, headers) {
   return rules;
 }
 
-function applyDropdownsToRow_(sheet, headers, rules, row) {
+function findChipTemplateRow_(sheet, headers, excludeRow) {
+  var colIdx = headers.indexOf(SPELERS_DROPDOWN_COLS[0]);
+  if (colIdx < 0) return 0;
+  for (var row = SPELERS_ROW_START; row <= SPELERS_ROW_END; row++) {
+    if (row === excludeRow) continue;
+    if (!rowHasPlayer_(sheet, headers, row)) continue;
+    if (sheet.getRange(row, colIdx + 1).getDataValidation()) return row;
+  }
+  return 0;
+}
+
+/** Copy chip validation + grey pill format; keep the destination cell value. */
+function applyChipDropdownsFromTemplate_(sheet, headers, templateRow, row) {
   SPELERS_DROPDOWN_COLS.forEach(function (colName) {
     var colIdx = headers.indexOf(colName);
-    if (colIdx < 0 || !rules[colName]) return;
-    sheet.getRange(row, colIdx + 1).setDataValidation(rules[colName]);
+    if (colIdx < 0) return;
+    var dest = sheet.getRange(row, colIdx + 1);
+    var keep = dest.getValue();
+    var src = sheet.getRange(templateRow, colIdx + 1);
+    src.copyTo(dest, SpreadsheetApp.CopyPasteType.PASTE_DATA_VALIDATION, false);
+    src.copyTo(dest, SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
+    dest.setValue(keep);
   });
+}
+
+function seedPlainValidationOnFirstPlayer_(sheet, headers, rules) {
+  for (var row = SPELERS_ROW_START; row <= SPELERS_ROW_END; row++) {
+    if (!rowHasPlayer_(sheet, headers, row)) continue;
+    SPELERS_DROPDOWN_COLS.forEach(function (colName) {
+      var colIdx = headers.indexOf(colName);
+      if (colIdx < 0 || !rules[colName]) return;
+      sheet.getRange(row, colIdx + 1).setDataValidation(rules[colName]);
+    });
+    return;
+  }
 }
 
 function clearDropdownsOnRow_(sheet, headers, row) {
   SPELERS_DROPDOWN_COLS.forEach(function (colName) {
     var colIdx = headers.indexOf(colName);
     if (colIdx < 0) return;
-    sheet.getRange(row, colIdx + 1).clearDataValidations();
-  });
-}
-
-function clearDropdownValidations_(sheet, headers) {
-  SPELERS_DROPDOWN_COLS.forEach(function (colName) {
-    var colIdx = headers.indexOf(colName);
-    if (colIdx < 0) return;
-    sheet
-      .getRange(SPELERS_ROW_START, colIdx + 1, SPELERS_ROW_END, colIdx + 1)
-      .clearDataValidations();
+    var cell = sheet.getRange(row, colIdx + 1);
+    cell.clearDataValidations();
+    cell.clearFormat();
   });
 }
 
@@ -185,7 +216,7 @@ function readKeuzelijsten_(sheet) {
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('Academy Beheer')
-    .addItem('Spelers-dropdowns zetten (nu)', 'setupSpelersDropdowns')
+    .addItem('Spelers chip-dropdowns zetten (nu)', 'setupSpelersDropdowns')
     .addItem('Auto-dropdowns voor alle coaches (1×)', 'installSpelersTriggers')
     .addToUi();
 }
