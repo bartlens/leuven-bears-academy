@@ -47,10 +47,10 @@ export function TeamNavbar() {
             />
             <div className="min-w-0 leading-tight">
               <p className="truncate font-display text-sm font-bold tracking-wide text-cream sm:text-base">
-                {team?.name ?? 'Ploeg'}
+                Leuven Bears
               </p>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-hoop">
-                {team?.category ?? 'Academy'}
+              <p className="truncate text-[11px] font-semibold uppercase tracking-[0.18em] text-hoop">
+                {team?.name ?? 'Academy'}
               </p>
             </div>
           </NavLink>
