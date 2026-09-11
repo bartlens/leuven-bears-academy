@@ -95,8 +95,8 @@ export function TeamHome() {
             </span>
             <HeroTitlePeek
               key={team.slug}
-              name={ploeg.name ?? team.name}
-              category={ploeg.category ?? team.category}
+              name="Leuven Bears"
+              category={ploeg.name ?? team.name}
               players={players}
               autoWelcome
             />
@@ -238,7 +238,7 @@ export function TeamHome() {
             <span className="rounded-full bg-white/5 px-3 py-1">{activeDays}</span>
           ) : (
             <span className="rounded-full bg-white/5 px-3 py-1">
-              {ploeg.category ?? team.category}
+              {ploeg.name ?? team.name}
             </span>
           )}
           <span className="rounded-full bg-white/5 px-3 py-1">#WEBEARS</span>
