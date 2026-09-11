@@ -149,6 +149,7 @@ function onOpen() {
     .createMenu('Academy sync')
     .addItem('Alles bijwerken vanuit Beheer (spelers + trainingen + matchen)', 'syncAllesVanuitBeheer')
     .addItem('Alleen spelers syncen', 'syncSpelersFromBeheer')
+    .addItem('Ja/Nee chips + zachte kleuren', 'styleJaNeeChipsNu')
     .addToUi();
 }
 
@@ -614,6 +615,15 @@ function toJaNee_(v) {
   return '';
 }
 
+/** Zachte kleuren zoals origineel U10 C-blad (niet neon). */
+var JA_NEE_COLORS_ = {
+  jaBg: '#D9EAD3',
+  jaFg: '#274E13',
+  neeBg: '#F4CCCC',
+  neeFg: '#990000',
+  leegBg: '#F3F3F3'
+};
+
 function applyJaNeeValidation_(range) {
   var values = range.getValues();
   for (var r = 0; r < values.length; r++) {
@@ -622,37 +632,135 @@ function applyJaNeeValidation_(range) {
     }
   }
   range.setValues(values);
+  styleJaNeeRange_(range);
+}
+
+/**
+ * Chip-dropdowns (pill-knoppen) + zachte CF. Waarden blijven intact.
+ * Probeert Sheets API displayStyle=CHIP; valt terug op gewone dropdown.
+ */
+function styleJaNeeRange_(range) {
   range.clearDataValidations();
   try { range.removeCheckboxes(); } catch (e) {}
 
-  var rule = SpreadsheetApp.newDataValidation()
-    .requireValueInList(['Ja', 'Nee'], true)
-    .setAllowInvalid(true)
-    .build();
-  range.setDataValidation(rule);
+  var chipOk = trySetJaNeeChips_(range);
+  if (!chipOk) {
+    var rule = SpreadsheetApp.newDataValidation()
+      .requireValueInList(['Ja', 'Nee'], true)
+      .setAllowInvalid(true)
+      .setHelpText('Ja of Nee')
+      .build();
+    range.setDataValidation(rule);
+  }
 
   var sheet = range.getSheet();
+  // Vervang enkel onze Ja/Nee-regels op dit bereik: clear all CF then callers
+  // often clear sheet first. Hier: append zachte regels.
   var existing = sheet.getConditionalFormatRules();
   existing.push(SpreadsheetApp.newConditionalFormatRule()
     .whenTextEqualTo('Ja')
-    .setBackground('#81C784')
-    .setFontColor('#1B5E20')
+    .setBackground(JA_NEE_COLORS_.jaBg)
+    .setFontColor(JA_NEE_COLORS_.jaFg)
     .setRanges([range])
     .build());
   existing.push(SpreadsheetApp.newConditionalFormatRule()
     .whenTextEqualTo('Nee')
-    .setBackground('#E57373')
-    .setFontColor('#B71C1C')
+    .setBackground(JA_NEE_COLORS_.neeBg)
+    .setFontColor(JA_NEE_COLORS_.neeFg)
     .setRanges([range])
     .build());
   existing.push(SpreadsheetApp.newConditionalFormatRule()
     .whenCellEmpty()
-    .setBackground('#EEEEEE')
+    .setBackground(JA_NEE_COLORS_.leegBg)
     .setRanges([range])
     .build());
   sheet.setConditionalFormatRules(existing);
-  range.setHorizontalAlignment('center');
+  range.setHorizontalAlignment('center').setVerticalAlignment('middle');
+  range.setFontWeight('bold');
 }
+
+/** Sheets Advanced Service — pill chips. false = niet beschikbaar. */
+function trySetJaNeeChips_(range) {
+  try {
+    if (typeof Sheets === 'undefined' || !Sheets.Spreadsheets) return false;
+    var ss = range.getSheet().getParent();
+    var sheetId = range.getSheet().getSheetId();
+    var req = {
+      requests: [{
+        setDataValidation: {
+          range: {
+            sheetId: sheetId,
+            startRowIndex: range.getRow() - 1,
+            endRowIndex: range.getRow() - 1 + range.getNumRows(),
+            startColumnIndex: range.getColumn() - 1,
+            endColumnIndex: range.getColumn() - 1 + range.getNumColumns()
+          },
+          rule: {
+            condition: {
+              type: 'ONE_OF_LIST',
+              values: [
+                { userEnteredValue: 'Ja' },
+                { userEnteredValue: 'Nee' }
+              ]
+            },
+            showCustomUi: true,
+            strict: false,
+            displayStyle: 'CHIP'
+          }
+        }
+      }]
+    };
+    Sheets.Spreadsheets.batchUpdate(req, ss.getId());
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+
+/**
+ * Herstijl bestaande Trainingen + Wedstrijden zonder sync (waarden blijven).
+ * Menu: Academy sync → Ja/Nee chips + zachte kleuren.
+ */
+function styleJaNeeChipsNu() {
+  var ss = SpreadsheetApp.getActive();
+  var n = 0;
+  n += styleJaNeeOnSheet_(ss.getSheetByName(SHEET_TRAININGEN_), 4);
+  n += styleJaNeeOnSheet_(ss.getSheetByName(SHEET_WEDSTRIJDEN_), 4);
+  ss.toast('Ja/Nee gestyled op ' + n + ' celbereik(en).', 'Academy sync', 6);
+}
+
+function styleJaNeeOnSheet_(sh, firstPlayerRow) {
+  if (!sh) return 0;
+  var lastRow = sh.getLastRow();
+  var lastCol = sh.getLastColumn();
+  if (lastRow < firstPlayerRow || lastCol < 2) return 0;
+
+  // Find last player row (before Totaal / helpers)
+  var names = sh.getRange(firstPlayerRow, 1, lastRow, 1).getDisplayValues();
+  var lastPlayer = firstPlayerRow - 1;
+  for (var i = 0; i < names.length; i++) {
+    var n = String(names[i][0] || '').trim();
+    if (!n) break;
+    if (n === 'Totaal' || n.indexOf('Tafel') === 0 || n.indexOf('Truitjes') === 0 || n.indexOf('Afspraken') === 0) break;
+    lastPlayer = firstPlayerRow + i;
+  }
+  if (lastPlayer < firstPlayerRow) return 0;
+
+  // Session cols: B .. lastCol-1 if last is Totaal, else B..lastCol
+  var endCol = lastCol;
+  var header = String(sh.getRange(1, lastCol).getDisplayValue() || '').toLowerCase();
+  if (header.indexOf('totaal') >= 0) endCol = lastCol - 1;
+  if (endCol < 2) return 0;
+
+  var range = sh.getRange(firstPlayerRow, 2, lastPlayer, endCol);
+  // Soft CF: clear previous conditional rules on sheet then re-apply only for this
+  // (Wedstrijden+Trainingen both call this — second call would duplicate.
+  //  Clear all CF once per sheet here.)
+  sh.clearConditionalFormatRules();
+  styleJaNeeRange_(range);
+  return 1;
+}
+
 
 function matchHeaderLabel_(s) {
   // Zoals origineel: datum + tegenstander (+ thuis/uit + uur)
