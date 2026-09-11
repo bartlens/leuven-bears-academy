@@ -1,7 +1,7 @@
 stap,uitleg
 1,"Dit is de AANWEZIGHEID-map. Ouders vullen hier alleen aan of hun kind komt."
 2,"Spelers toevoegen doe je NIET hier — dat gebeurt in de Beheer-map (tab Spelers)."
-3,"Vul in de matrix J (ja), N (nee) of ? (weet nog niet). Leeg = nog niet ingevuld."
+3,"Zet een vinkje bij jouw kind als het komt. Geen vinkje = komt niet / nog niet bevestigd."
 4,"Wijzig alleen de cel van jouw kind. Andere cellen met rust laten."
 5,"Sessies (trainingen/matchen) komen AUTOMATISCH uit Beheer via menu Academy sync → Alles bijwerken. Typ ze niet manueel in Sessies."
 6,"Zet in Uitleg het beheer_sheet_id. Coach runt 1× het sync-script (rechten). Daarna: Beheer aanpassen → sync → klaar."

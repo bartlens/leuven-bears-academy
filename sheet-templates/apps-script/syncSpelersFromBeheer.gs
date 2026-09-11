@@ -16,7 +16,8 @@
  * Effect van syncAllesVanuitBeheer:
  * - Spelers_ref + Aanwezigheid-kolommen vanuit Beheer!Spelers
  * - Sessies herschreven vanuit weekschema + Trainingen_data + Matchen
- * - Aanwezigheid-matrix: nieuwe rijen erbij; bestaande J/N/? blijven staan
+ * - Aanwezigheid-matrix: nieuwe rijen erbij; bestaande vinkjes blijven staan
+ * - Speelercellen = checkboxes (aan = komt / uit = komt niet)
  * - Aanwezigheid_per_speler: alleen nieuwe sessie×speler-rijen
  */
 
@@ -42,10 +43,11 @@ function syncAllesVanuitBeheer() {
   var sessies = buildSessiesVanuitBeheer_(beheer);
   writeSessies_(ss, sessies);
   ensureMatrixRows_(ss, sessies);
+  applyAttendanceCheckboxes_(ss, players);
   ensureTallRows_(ss, players, sessies);
 
   ss.toast(
-    players.length + ' spelers · ' + sessies.length + ' sessies bijgewerkt (J/N/? bewaard).',
+    players.length + ' spelers · ' + sessies.length + ' sessies bijgewerkt (vinkjes bewaard).',
     'Academy sync',
     8
   );
@@ -463,7 +465,7 @@ function writeSessies_(ss, sessies) {
 }
 
 /**
- * Matrix: bestaande rijen behouden (J/N/? nooit wissen).
+ * Matrix: bestaande rijen behouden (vinkjes nooit wissen).
  * Lead-kolommen (datum/type/label) updaten; ontbrekende sessie-rijen appenden.
  */
 function ensureMatrixRows_(ss, sessies) {
@@ -521,6 +523,59 @@ function ensureMatrixRows_(ss, sessies) {
   if (toAppend.length) {
     sh.getRange(sh.getLastRow() + 1, 1, toAppend.length, headers.length).setValues(toAppend);
   }
+}
+
+/**
+ * Speelercellen → Google-checkboxes.
+ * J/ja/✅ → aan; N/nee/?/leeg → uit. Bestaande TRUE/FALSE blijven.
+ */
+function applyAttendanceCheckboxes_(ss, players) {
+  var sh = ss.getSheetByName('Aanwezigheid');
+  if (!sh || !players || !players.length) return;
+
+  var lastCol = Math.max(sh.getLastColumn(), 1);
+  var lastRow = Math.max(sh.getLastRow(), 1);
+  if (lastRow < 2) return;
+
+  var headers = sh.getRange(1, 1, 1, lastCol).getValues()[0].map(String);
+  var lead = { sessie_id: 1, datum: 1, type: 1, label: 1, notitie_coach: 1, uur: 1, locatie: 1 };
+
+  players.forEach(function (p) {
+    var colIdx = headers.indexOf(p.header);
+    if (colIdx < 0) return;
+    var range = sh.getRange(2, colIdx + 1, lastRow, colIdx + 1);
+    var values = range.getValues();
+    for (var i = 0; i < values.length; i++) {
+      values[i][0] = toCheckboxBool_(values[i][0]);
+    }
+    range.setValues(values);
+    range.insertCheckboxes();
+  });
+
+  // Ook losse kolommen die op #nummer lijken (als Spelers_ref headers afwijken)
+  for (var c = 0; c < headers.length; c++) {
+    var h = String(headers[c] || '').trim();
+    if (!h || lead[h]) continue;
+    if (h.charAt(0) !== '#') continue;
+    var already = false;
+    for (var pi = 0; pi < players.length; pi++) {
+      if (players[pi].header === h) { already = true; break; }
+    }
+    if (already) continue;
+    var r2 = sh.getRange(2, c + 1, lastRow, c + 1);
+    var vals = r2.getValues();
+    for (var j = 0; j < vals.length; j++) vals[j][0] = toCheckboxBool_(vals[j][0]);
+    r2.setValues(vals);
+    r2.insertCheckboxes();
+  }
+}
+
+function toCheckboxBool_(v) {
+  if (v === true || v === false) return v;
+  var s = String(v == null ? '' : v).trim().toLowerCase();
+  if (!s) return false;
+  if (s === 'j' || s === 'ja' || s === 'yes' || s === 'true' || s === '1' || s === '✅' || s === 'x') return true;
+  return false;
 }
 
 /**

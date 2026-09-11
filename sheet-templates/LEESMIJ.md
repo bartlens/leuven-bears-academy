@@ -32,7 +32,7 @@ Nummer + voornaam volstaat. Dropdowns (look/emoji) staan klaar; `random` = de si
 ## Aanwezigheid — voor ouders
 
 1. Tab **Lees_mij** / **Uitleg**: plak `beheer_sheet_id`.  
-2. Ouders zetten enkel **J / N / ?** bij hun kind.  
+2. Ouders zetten enkel een **vinkje** (checkbox) bij hun kind: aan = komt, uit = komt niet.  
 3. Spelers **niet** hier toevoegen — dat gebeurt in Beheer → Spelers.  
 4. Sessies **niet** manueel in Sessies typen — menu **Academy sync → Alles bijwerken**.
 

@@ -6,4 +6,4 @@ sync_sessies,"Sessies komen AUTOMATISCH uit Beheer: Trainingen_week (+ Traininge
 sync_hoe,"1) Plak hieronder het beheer_sheet_id. 2) Extensies → Apps Script → syncSpelersFromBeheer.gs plakken. 3) Menu Academy sync → Alles bijwerken vanuit Beheer."
 beheer_sheet_id,1Z9yOU8F7zR8Rr3jtdJ8Y_tH28DquUIZDbV8-WGIa62s
 beheer_sheet_url,https://docs.google.com/spreadsheets/d/1Z9yOU8F7zR8Rr3jtdJ8Y_tH28DquUIZDbV8-WGIa62s/edit
-tips,"Zet J / N / ? of ✅ / ❌ / ❓. Leeg = nog niet ingevuld. Alleen jouw kind aanpassen. Ontbreekt een sessie? Vraag de coach om Beheer bij te werken en opnieuw te syncen — niet zelf een rij verzinnen."
+tips,"Zet een vinkje bij jouw kind als het komt (geen vinkje = komt niet). Alleen jouw kind aanpassen. Ontbreekt een sessie? Vraag de coach om Beheer bij te werken en opnieuw te syncen."
