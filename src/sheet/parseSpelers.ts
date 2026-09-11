@@ -27,7 +27,7 @@ export function parseSpelersCsv(
   opts: { teamSlug: string; ageGroup: TeamGroup },
 ): AcademyPlayer[] {
   const rows = csvToObjects(csvText)
-  const parsed: { player: AcademyPlayer; order: number }[] = []
+  const players: AcademyPlayer[] = []
 
   for (const row of rows) {
     const firstName = (row.voornaam ?? '').trim()
@@ -53,28 +53,21 @@ export function parseSpelersCsv(
       ? appearance.accent
       : 'orange') as AcademyPlayer['accent']
 
-    const orderRaw = Number.parseInt(row.volgorde ?? '', 10)
-    const order = Number.isFinite(orderRaw) ? orderRaw : number
-
-    parsed.push({
-      order,
-      player: {
-        id,
-        firstName,
-        number,
-        ageGroup: opts.ageGroup,
-        teamSlug: opts.teamSlug,
-        label: appearance.label,
-        emoji: appearance.emoji,
-        accent,
-        move: appearance.move as PlayerMove,
-        moveLabel: appearance.moveLabel,
-        look: lookFromAppearance(appearance),
-      },
+    players.push({
+      id,
+      firstName,
+      number,
+      ageGroup: opts.ageGroup,
+      teamSlug: opts.teamSlug,
+      label: appearance.label,
+      emoji: appearance.emoji,
+      accent,
+      move: appearance.move as PlayerMove,
+      moveLabel: appearance.moveLabel,
+      look: lookFromAppearance(appearance),
     })
   }
 
-  return parsed
-    .sort((a, b) => a.order - b.order || a.player.number - b.player.number)
-    .map((p) => p.player)
+  // Order = jersey number (no separate volgorde column)
+  return players.sort((a, b) => a.number - b.number)
 }

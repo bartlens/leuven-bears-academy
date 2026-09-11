@@ -2,18 +2,17 @@
  * Plak dit in de BEHEER-spreadsheet (niet Aanwezigheid):
  * Extensies → Apps Script → nieuw bestand → plak → opslaan.
  *
- * Eerste keer:
- * 1. Run setupSpelersDropdowns() eenmaal (rechten toestaan).
- * 2. Optioneel: Triggers → onEditSpelersDefaults als installable onEdit
- *    (of laat simple trigger onEdit staan — werkt voor de eigenaar).
+ * Eerste keer: run setupSpelersDropdowns() eenmaal (rechten toestaan).
+ * Menu: Academy Beheer → Spelers-dropdowns zetten.
  *
- * Effect:
- * - DataValidation dropdowns op Spelers-kolommen label,emoji,accent,move,
- *   haarstijl,haarkleur,huidskleur (rijen 2–200) vanuit tab Keuzelijsten.
- * - Bij nieuwe rij (nummer of voornaam ingevuld): lege appearance-cellen → "random".
+ * Regels:
+ * - Geen kolom "volgorde" — sortering op de site = nummer.
+ * - Dropdowns ALLEEN op rijen met nummer én/of voornaam (lege rijen blijven proper).
+ * - Nieuwe speler: onEdit zet defaults op "random" + dropdowns op die rij.
+ * - Lege rijen: data validation wordt gewist.
  */
 
-var SPELERS_APPEARANCE_COLS = [
+var SPELERS_DROPDOWN_COLS = [
   'label',
   'emoji',
   'accent',
@@ -21,6 +20,7 @@ var SPELERS_APPEARANCE_COLS = [
   'haarstijl',
   'haarkleur',
   'huidskleur',
+  'zichtbaar',
 ];
 var SPELERS_ROW_START = 2;
 var SPELERS_ROW_END = 200;
@@ -32,96 +32,143 @@ function setupSpelersDropdowns() {
   if (!spelers) throw new Error('Tab "Spelers" ontbreekt');
   if (!keuzes) throw new Error('Tab "Keuzelijsten" ontbreekt');
 
+  // Drop obsolete volgorde column if still present
+  removeVolgordeColumn_(spelers);
+
   var lists = readKeuzelijsten_(keuzes);
-  var headers = spelers
-    .getRange(1, 1, 1, spelers.getLastColumn())
-    .getValues()[0]
-    .map(String);
+  var headers = getHeaders_(spelers);
+  var rules = buildRules_(lists, headers);
 
-  SPELERS_APPEARANCE_COLS.forEach(function (colName) {
-    var colIdx = headers.indexOf(colName);
-    if (colIdx < 0) {
-      Logger.log('Kolom ontbreekt: ' + colName);
-      return;
-    }
-    var values = lists[colName];
-    if (!values || !values.length) {
-      Logger.log('Geen keuzes voor lijst: ' + colName);
-      return;
-    }
-    var rule = SpreadsheetApp.newDataValidation()
-      .requireValueInList(values, true)
-      .setAllowInvalid(false)
-      .setHelpText('Kies uit Keuzelijsten · tip: random')
-      .build();
-    spelers
-      .getRange(SPELERS_ROW_START, colIdx + 1, SPELERS_ROW_END, colIdx + 1)
-      .setDataValidation(rule);
-  });
+  // Clear validations on the whole appearance block first (empty rows stay clean)
+  clearDropdownValidations_(spelers, headers);
 
-  fillEmptyAppearanceWithRandom_(spelers, headers);
+  var filled = 0;
+  for (var row = SPELERS_ROW_START; row <= SPELERS_ROW_END; row++) {
+    if (!rowHasPlayer_(spelers, headers, row)) continue;
+    applyDropdownsToRow_(spelers, headers, rules, row);
+    fillEmptyAppearanceWithRandomOnRow_(spelers, headers, row);
+    filled++;
+  }
+
   SpreadsheetApp.getUi().alert(
-    'Spelers-dropdowns gezet (rijen ' +
-      SPELERS_ROW_START +
-      '–' +
-      SPELERS_ROW_END +
-      '). Lege appearance → random waar nummer/voornaam al stond.',
+    'Spelers-dropdowns gezet op ' +
+      filled +
+      ' gevulde rij(en). Lege rijen hebben geen dropdowns. Kolom volgorde (indien aanwezig) is verwijderd.',
   );
 }
 
-/** Simple trigger: fires for the sheet owner when editing Spelers. */
+/** Simple trigger: owner edits Spelers. */
 function onEdit(e) {
   onEditSpelersDefaults(e);
 }
 
-/** Installable-safe entry (same logic). */
 function onEditSpelersDefaults(e) {
   if (!e || !e.range) return;
   var sheet = e.range.getSheet();
   if (sheet.getName() !== 'Spelers') return;
 
-  var headers = sheet
-    .getRange(1, 1, 1, sheet.getLastColumn())
-    .getValues()[0]
-    .map(String);
   var row = e.range.getRow();
   if (row < SPELERS_ROW_START || row > SPELERS_ROW_END) return;
 
+  var ss = SpreadsheetApp.getActive();
+  var keuzes = ss.getSheetByName('Keuzelijsten');
+  if (!keuzes) return;
+
+  var headers = getHeaders_(sheet);
+  var lists = readKeuzelijsten_(keuzes);
+  var rules = buildRules_(lists, headers);
+
+  if (!rowHasPlayer_(sheet, headers, row)) {
+    // Cleared name/number → remove dropdowns on this row
+    clearDropdownsOnRow_(sheet, headers, row);
+    return;
+  }
+
+  applyDropdownsToRow_(sheet, headers, rules, row);
+  fillEmptyAppearanceWithRandomOnRow_(sheet, headers, row);
+}
+
+function removeVolgordeColumn_(sheet) {
+  var headers = getHeaders_(sheet);
+  var idx = headers.indexOf('volgorde');
+  if (idx < 0) return;
+  sheet.deleteColumn(idx + 1);
+}
+
+function getHeaders_(sheet) {
+  return sheet
+    .getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1))
+    .getValues()[0]
+    .map(function (h) {
+      return String(h || '').trim();
+    });
+}
+
+function rowHasPlayer_(sheet, headers, row) {
   var iNum = headers.indexOf('nummer');
   var iNaam = headers.indexOf('voornaam');
-  if (iNum < 0 || iNaam < 0) return;
-
+  if (iNum < 0 || iNaam < 0) return false;
   var num = sheet.getRange(row, iNum + 1).getValue();
   var naam = String(sheet.getRange(row, iNaam + 1).getValue() || '').trim();
-  if ((num === '' || num == null) && !naam) return;
+  var hasNum = !(num === '' || num == null);
+  return hasNum || !!naam;
+}
 
-  // Ensure validations stay present (cheap re-apply on edited columns is optional;
-  // full setup is via menu).
-  SPELERS_APPEARANCE_COLS.forEach(function (colName) {
+function buildRules_(lists, headers) {
+  var rules = {};
+  SPELERS_DROPDOWN_COLS.forEach(function (colName) {
+    if (headers.indexOf(colName) < 0) return;
+    var values = lists[colName];
+    if (!values || !values.length) return;
+    rules[colName] = SpreadsheetApp.newDataValidation()
+      .requireValueInList(values, true)
+      .setAllowInvalid(false)
+      .setHelpText('Kies uit Keuzelijsten · tip: random')
+      .build();
+  });
+  return rules;
+}
+
+function applyDropdownsToRow_(sheet, headers, rules, row) {
+  SPELERS_DROPDOWN_COLS.forEach(function (colName) {
     var colIdx = headers.indexOf(colName);
     if (colIdx < 0) return;
-    var cell = sheet.getRange(row, colIdx + 1);
-    var val = String(cell.getValue() || '').trim();
-    if (!val) cell.setValue('random');
+    var rule = rules[colName];
+    if (!rule) return;
+    sheet.getRange(row, colIdx + 1).setDataValidation(rule);
   });
 }
 
-function fillEmptyAppearanceWithRandom_(sheet, headers) {
-  var last = Math.min(Math.max(sheet.getLastRow(), SPELERS_ROW_START), SPELERS_ROW_END);
-  var iNum = headers.indexOf('nummer');
-  var iNaam = headers.indexOf('voornaam');
-  if (iNum < 0 || iNaam < 0) return;
+function clearDropdownsOnRow_(sheet, headers, row) {
+  SPELERS_DROPDOWN_COLS.forEach(function (colName) {
+    var colIdx = headers.indexOf(colName);
+    if (colIdx < 0) return;
+    sheet.getRange(row, colIdx + 1).clearDataValidations();
+  });
+}
 
-  for (var row = SPELERS_ROW_START; row <= last; row++) {
-    var num = sheet.getRange(row, iNum + 1).getValue();
-    var naam = String(sheet.getRange(row, iNaam + 1).getValue() || '').trim();
-    if ((num === '' || num == null) && !naam) continue;
-    SPELERS_APPEARANCE_COLS.forEach(function (colName) {
-      var colIdx = headers.indexOf(colName);
-      if (colIdx < 0) return;
-      var cell = sheet.getRange(row, colIdx + 1);
-      if (!String(cell.getValue() || '').trim()) cell.setValue('random');
-    });
+function clearDropdownValidations_(sheet, headers) {
+  SPELERS_DROPDOWN_COLS.forEach(function (colName) {
+    var colIdx = headers.indexOf(colName);
+    if (colIdx < 0) return;
+    sheet
+      .getRange(SPELERS_ROW_START, colIdx + 1, SPELERS_ROW_END, colIdx + 1)
+      .clearDataValidations();
+  });
+}
+
+function fillEmptyAppearanceWithRandomOnRow_(sheet, headers, row) {
+  SPELERS_DROPDOWN_COLS.forEach(function (colName) {
+    if (colName === 'zichtbaar') return; // default ja separately
+    var colIdx = headers.indexOf(colName);
+    if (colIdx < 0) return;
+    var cell = sheet.getRange(row, colIdx + 1);
+    if (!String(cell.getValue() || '').trim()) cell.setValue('random');
+  });
+  var iZ = headers.indexOf('zichtbaar');
+  if (iZ >= 0) {
+    var z = sheet.getRange(row, iZ + 1);
+    if (!String(z.getValue() || '').trim()) z.setValue('ja');
   }
 }
 
