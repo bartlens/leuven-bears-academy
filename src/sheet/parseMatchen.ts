@@ -65,6 +65,15 @@ export function parseMatchenCsv(
     if (opponent.toUpperCase().startsWith('VOORBEELD') || note.includes('voorbeeld-rij')) {
       continue
     }
+    // Rows marked for attendance-sheet sync only (official games stay on VBL)
+    const compLower = (competition || '').toLowerCase()
+    if (
+      compLower === 'aanwezigheid' ||
+      compLower.startsWith('aanwezigheid') ||
+      note.includes('alleen voor ouder-aanwezigheid')
+    ) {
+      continue
+    }
     const scoreWij = (row.score_ons ?? row.score_wij ?? '').trim()
     const scoreZij = (row.score_tegenstander ?? row.score_zij ?? '').trim()
     const score =
