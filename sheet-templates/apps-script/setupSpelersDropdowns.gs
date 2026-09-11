@@ -4,8 +4,9 @@
  * Extensies → Apps Script → plak → opslaan.
  * 1× installSpelersTriggers() (rechten), 1× setupSpelersDropdowns().
  *
- * Chip-stijl (grijze pills) blijft behouden door validatie+opmaak te
- * KOPIËREN van een bestaande rij — niet via setDataValidation (dat = pijltjes).
+ * Validatielijsten komen altijd uit Keuzelijsten (nieuwe huid/haar/kapsel
+ * verschijnen zo in de chips). Grijze pill-opmaak wordt gekopieerd van
+ * een bestaande rij.
  */
 
 var SPELERS_DROPDOWN_COLS = [
@@ -25,9 +26,7 @@ function installSpelersTriggers() {
     .forSpreadsheet(ss)
     .onEdit()
     .create();
-  SpreadsheetApp.getUi().alert(
-    'Installable onEdit gezet. Nieuwe spelers krijgen automatisch chip-dropdowns.',
-  );
+  SpreadsheetApp.getActive().toast('Installable onEdit gezet.', 'Academy Beheer', 5);
 }
 
 function setupSpelersDropdowns() {
@@ -43,17 +42,7 @@ function setupSpelersDropdowns() {
   var headers = getHeaders_(spelers);
   var lists = readKeuzelijsten_(keuzes);
   var rules = buildRules_(lists, headers);
-
-  // Template EERST kiezen — nooit alle chips wissen vóór de copy.
-  var templateRow = findChipTemplateRow_(spelers, headers, -1);
-  if (!templateRow) {
-    seedPlainValidationOnFirstPlayer_(spelers, headers, rules);
-    templateRow = findChipTemplateRow_(spelers, headers, -1);
-  }
-  if (!templateRow) {
-    SpreadsheetApp.getUi().alert('Geen spelersrij om dropdowns van te kopiëren.');
-    return;
-  }
+  var templateRow = findFormatTemplateRow_(spelers, headers);
 
   var filled = 0;
   for (var row = SPELERS_ROW_START; row <= SPELERS_ROW_END; row++) {
@@ -61,14 +50,13 @@ function setupSpelersDropdowns() {
       clearDropdownsOnRow_(spelers, headers, row);
       continue;
     }
-    applyChipDropdownsFromTemplate_(spelers, headers, templateRow, row);
+    applyFreshDropdownsWithChipFormat_(spelers, headers, rules, templateRow, row);
     fillEmptyAppearanceWithRandomOnRow_(spelers, headers, row);
     filled++;
   }
 
-  SpreadsheetApp.getUi().alert(
-    'Chip-dropdowns gezet op ' + filled + ' gevulde rij(en), gekopieerd van rij ' + templateRow + '.',
-  );
+  // toast i.p.v. alert — blokkeert de editor niet
+  ss.toast('Chip-dropdowns gezet op ' + filled + ' rij(en).', 'Academy Beheer', 8);
 }
 
 function onEditSpelersDefaults(e) {
@@ -79,6 +67,9 @@ function onEditSpelersDefaults(e) {
   if (row < SPELERS_ROW_START || row > SPELERS_ROW_END) return;
 
   var headers = getHeaders_(sheet);
+  var keuzes = SpreadsheetApp.getActive().getSheetByName('Keuzelijsten');
+  if (!keuzes) return;
+  var rules = buildRules_(readKeuzelijsten_(keuzes), headers);
 
   if (!rowHasPlayer_(sheet, headers, row)) {
     clearDropdownsOnRow_(sheet, headers, row);
@@ -90,17 +81,8 @@ function onEditSpelersDefaults(e) {
     return;
   }
 
-  var templateRow = findChipTemplateRow_(sheet, headers, row);
-  if (!templateRow) {
-    var keuzes = SpreadsheetApp.getActive().getSheetByName('Keuzelijsten');
-    if (!keuzes) return;
-    var rules = buildRules_(readKeuzelijsten_(keuzes), headers);
-    seedPlainValidationOnFirstPlayer_(sheet, headers, rules);
-    templateRow = findChipTemplateRow_(sheet, headers, row);
-  }
-  if (!templateRow) return;
-
-  applyChipDropdownsFromTemplate_(sheet, headers, templateRow, row);
+  var templateRow = findFormatTemplateRow_(sheet, headers);
+  applyFreshDropdownsWithChipFormat_(sheet, headers, rules, templateRow, row);
   fillEmptyAppearanceWithRandomOnRow_(sheet, headers, row);
 }
 
@@ -144,41 +126,35 @@ function buildRules_(lists, headers) {
   return rules;
 }
 
-function findChipTemplateRow_(sheet, headers, excludeRow) {
+/** Row to copy grey pill FORMAT from (not validation lists). */
+function findFormatTemplateRow_(sheet, headers) {
   var colIdx = headers.indexOf(SPELERS_DROPDOWN_COLS[0]);
   if (colIdx < 0) return 0;
   for (var row = SPELERS_ROW_START; row <= SPELERS_ROW_END; row++) {
-    if (row === excludeRow) continue;
     if (!rowHasPlayer_(sheet, headers, row)) continue;
     if (sheet.getRange(row, colIdx + 1).getDataValidation()) return row;
   }
   return 0;
 }
 
-/** Copy chip validation + grey pill format; keep the destination cell value. */
-function applyChipDropdownsFromTemplate_(sheet, headers, templateRow, row) {
+/**
+ * Fresh list from Keuzelijsten + chip-achtige opmaak van template.
+ * setDataValidation vernieuwt de keuzes; PASTE_FORMAT houdt de pill-look.
+ */
+function applyFreshDropdownsWithChipFormat_(sheet, headers, rules, templateRow, row) {
   SPELERS_DROPDOWN_COLS.forEach(function (colName) {
     var colIdx = headers.indexOf(colName);
-    if (colIdx < 0) return;
+    if (colIdx < 0 || !rules[colName]) return;
     var dest = sheet.getRange(row, colIdx + 1);
     var keep = dest.getValue();
-    var src = sheet.getRange(templateRow, colIdx + 1);
-    src.copyTo(dest, SpreadsheetApp.CopyPasteType.PASTE_DATA_VALIDATION, false);
-    src.copyTo(dest, SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
+    dest.setDataValidation(rules[colName]);
+    if (templateRow && templateRow !== row) {
+      sheet
+        .getRange(templateRow, colIdx + 1)
+        .copyTo(dest, SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
+    }
     dest.setValue(keep);
   });
-}
-
-function seedPlainValidationOnFirstPlayer_(sheet, headers, rules) {
-  for (var row = SPELERS_ROW_START; row <= SPELERS_ROW_END; row++) {
-    if (!rowHasPlayer_(sheet, headers, row)) continue;
-    SPELERS_DROPDOWN_COLS.forEach(function (colName) {
-      var colIdx = headers.indexOf(colName);
-      if (colIdx < 0 || !rules[colName]) return;
-      sheet.getRange(row, colIdx + 1).setDataValidation(rules[colName]);
-    });
-    return;
-  }
 }
 
 function clearDropdownsOnRow_(sheet, headers, row) {
