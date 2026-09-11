@@ -13,6 +13,8 @@ export type HairStyle =
   | 'short'
   | 'fluffy'
   | 'long'
+  | 'buzz'
+  | 'afro'
 
 export type PlayerMove =
   | 'arm-roll'

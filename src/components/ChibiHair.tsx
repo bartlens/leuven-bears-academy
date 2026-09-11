@@ -93,6 +93,31 @@ export function ChibiHair({ style, color }: { style: HairStyle; color: string })
           <ellipse cx="60" cy="28" rx="9" ry="5" fill="#fff" opacity="0.12" />
         </g>
       )
+    case 'buzz':
+      // very short buzz cut — thin cap hugging the skull
+      return (
+        <g className="pf-hair">
+          <path
+            d="M48 50 C46 36 56 26 70 26 C84 26 94 36 92 50 L88 48 C86 38 80 32 70 32 C60 32 54 38 52 48 Z"
+            fill={color}
+          />
+          <ellipse cx="70" cy="34" rx="18" ry="8" fill="#fff" opacity="0.08" />
+        </g>
+      )
+    case 'afro':
+      // rounded afro / curly volume — big soft sphere of coils
+      return (
+        <g className="pf-hair">
+          <circle cx="70" cy="36" r="36" fill={color} />
+          <circle cx="42" cy="44" r="14" fill={color} />
+          <circle cx="98" cy="44" r="14" fill={color} />
+          <circle cx="50" cy="24" r="12" fill={color} />
+          <circle cx="90" cy="24" r="12" fill={color} />
+          <circle cx="70" cy="18" r="14" fill={color} />
+          <circle cx="58" cy="30" r="6" fill="#fff" opacity="0.1" />
+          <circle cx="82" cy="28" r="5" fill="#fff" opacity="0.08" />
+        </g>
+      )
     default:
       // short — neat straight fringe
       return (

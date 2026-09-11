@@ -7,22 +7,34 @@ haarstijl,side,Zijscheiding
 haarstijl,curly,Krullen
 haarstijl,fluffy,Pluizig
 haarstijl,long,Lang
+haarstijl,buzz,Buzz
+haarstijl,afro,Afro
 haarkleur,random,🎲 Random
 haarkleur,blond-goud,Blond goud
 haarkleur,blond-warm,Blond warm
 haarkleur,blond-licht,Blond licht
+haarkleur,platina,Platina
+haarkleur,asblond,Asblond
 haarkleur,bruin,Bruin
+haarkleur,kastanje,Kastanje
 haarkleur,donkerbruin,Donkerbruin
 haarkleur,zwart,Zwart
 haarkleur,roodbruin,Roodbruin
+haarkleur,rood,Rood
 haarkleur,grijs,Grijs
+haarkleur,wit,Wit
 huidskleur,random,🎲 Random
 huidskleur,zeer-licht,Zeer licht
 huidskleur,licht,Licht
 huidskleur,warm-licht,Warm licht
 huidskleur,warm-medium,Warm medium
 huidskleur,medium,Medium
+huidskleur,olijf,Olijf
+huidskleur,goudbruin,Goudbruin
+huidskleur,bruin,Bruin
+huidskleur,diep-bruin,Diep bruin
 huidskleur,donker,Donker
+huidskleur,zeer-donker,Zeer donker
 label,random,🎲 Random
 label,Guard,Guard
 label,Forward,Forward

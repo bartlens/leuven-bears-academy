@@ -4,11 +4,16 @@ export const HAIR_COLOR_HEX: Record<string, string> = {
   'blond-goud': '#d4b45a',
   'blond-warm': '#e6c870',
   'blond-licht': '#f0d078',
+  platina: '#e8e4d4',
+  asblond: '#c4b896',
   bruin: '#5c3d24',
+  kastanje: '#6b3a2a',
   donkerbruin: '#1f1410',
   zwart: '#1a1a1a',
   roodbruin: '#8b4513',
+  rood: '#c23b22',
   grijs: '#9aa3ab',
+  wit: '#f2f0ea',
 }
 
 export const SKIN_COLOR_HEX: Record<string, string> = {
@@ -17,10 +22,15 @@ export const SKIN_COLOR_HEX: Record<string, string> = {
   'warm-licht': '#e8c4a0',
   'warm-medium': '#e8b48a',
   medium: '#d2a679',
+  olijf: '#c4a882',
+  goudbruin: '#c68642',
+  bruin: '#a06a3a',
+  'diep-bruin': '#6b3f2a',
   donker: '#8d5524',
+  'zeer-donker': '#3b2214',
 }
 
-export const HAIR_STYLES = ['short', 'spiky', 'bowl', 'side', 'curly', 'fluffy', 'long'] as const
+export const HAIR_STYLES = ['short', 'spiky', 'bowl', 'side', 'curly', 'fluffy', 'long', 'buzz', 'afro'] as const
 export const LABELS = ['Guard', 'Forward', 'Center'] as const
 export const ACCENTS = ['orange', 'bear', 'warm'] as const
 export const MOVES = [
