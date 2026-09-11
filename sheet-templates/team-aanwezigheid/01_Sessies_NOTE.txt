@@ -1,0 +1,2 @@
+Dit tabblad Sessies is VOORBEELD-data in de template.
+In de live Aanwezigheid-map: niet manueel onderhouden — menu Academy sync → Alles bijwerken schrijft Sessies vanuit Beheer (Trainingen_week + Trainingen_data + Matchen).

@@ -2,7 +2,8 @@ veld,waarde
 doel,"Ouders duiden aan of hun kind komt op training of match. Simpel houden!"
 wie_mag_bewerken,"Iedereen met de link (oudergroep / WhatsApp)."
 sync_spelers,"Spelers komen AUTOMATISCH uit Beheer → tab Spelers. Voeg spelers dus ALLEEN toe in Beheer."
-sync_hoe,"1) Plak hieronder het beheer_sheet_id. 2) Extensies → Apps Script → syncSpelersFromBeheer.gs eenmaal draaien."
+sync_sessies,"Sessies komen AUTOMATISCH uit Beheer: Trainingen_week (+ Trainingen_data uitzonderingen) en Matchen. Geen manueel Sessies-onderhoud."
+sync_hoe,"1) Plak hieronder het beheer_sheet_id. 2) Extensies → Apps Script → syncSpelersFromBeheer.gs plakken. 3) Menu Academy sync → Alles bijwerken vanuit Beheer."
 beheer_sheet_id,1Z9yOU8F7zR8Rr3jtdJ8Y_tH28DquUIZDbV8-WGIa62s
 beheer_sheet_url,https://docs.google.com/spreadsheets/d/1Z9yOU8F7zR8Rr3jtdJ8Y_tH28DquUIZDbV8-WGIa62s/edit
-tips,"Zet J / N / ? of ✅ / ❌ / ❓. Leeg = nog niet ingevuld. Alleen jouw kind aanpassen."
+tips,"Zet J / N / ? of ✅ / ❌ / ❓. Leeg = nog niet ingevuld. Alleen jouw kind aanpassen. Ontbreekt een sessie? Vraag de coach om Beheer bij te werken en opnieuw te syncen — niet zelf een rij verzinnen."

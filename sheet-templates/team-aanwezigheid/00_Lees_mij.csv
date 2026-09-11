@@ -3,5 +3,6 @@ stap,uitleg
 2,"Spelers toevoegen doe je NIET hier — dat gebeurt in de Beheer-map (tab Spelers)."
 3,"Vul in de matrix J (ja), N (nee) of ? (weet nog niet). Leeg = nog niet ingevuld."
 4,"Wijzig alleen de cel van jouw kind. Andere cellen met rust laten."
-5,"Sessies (trainingen/matchen) komen idealiter uit Beheer. Vraag de coach als een sessie ontbreekt."
-6,"Zet in Uitleg het beheer_sheet_id zodat sync kan werken (Apps Script)."
+5,"Sessies (trainingen/matchen) komen AUTOMATISCH uit Beheer via menu Academy sync → Alles bijwerken. Typ ze niet manueel in Sessies."
+6,"Zet in Uitleg het beheer_sheet_id. Coach runt 1× het sync-script (rechten). Daarna: Beheer aanpassen → sync → klaar."
+7,"Bestaande J/N/? blijven bewaard bij sync. Alleen nieuwe sessies of spelers komen erbij."
