@@ -64,13 +64,39 @@ export function parseCsv(text: string): string[][] {
   return rows
 }
 
-/** Header row → lowercase trimmed keys → record rows. */
+/**
+ * Header row → lowercase trimmed keys → record rows.
+ * Skips leading note/uitleg rows (e.g. Matchen banner) until a real header is found.
+ */
 export function csvToObjects(text: string): Record<string, string>[] {
   const rows = parseCsv(text)
   if (rows.length === 0) return []
-  const headers = (rows[0] ?? []).map((h) => h.trim().toLowerCase())
+
+  let headerIdx = 0
+  for (let i = 0; i < rows.length; i++) {
+    const cells = (rows[i] ?? []).map((h) => h.trim().toLowerCase())
+    const first = cells[0] ?? ''
+    // Skip banner/note rows
+    if (first.startsWith('_uitleg') || first.startsWith('uitleg') || first.startsWith('ℹ️')) {
+      continue
+    }
+    // Prefer a row that looks like column headers (multiple short tokens, no long prose)
+    const joined = cells.filter(Boolean).join(' ')
+    if (
+      cells.includes('datum') ||
+      cells.includes('nummer') ||
+      cells.includes('voornaam') ||
+      cells.includes('veld') ||
+      (cells.length >= 3 && !joined.includes(' automatisch '))
+    ) {
+      headerIdx = i
+      break
+    }
+  }
+
+  const headers = (rows[headerIdx] ?? []).map((h) => h.trim().toLowerCase())
   const out: Record<string, string>[] = []
-  for (let r = 1; r < rows.length; r++) {
+  for (let r = headerIdx + 1; r < rows.length; r++) {
     const cells = rows[r] ?? []
     if (cells.every((c) => !c.trim())) continue
     const obj: Record<string, string> = {}
