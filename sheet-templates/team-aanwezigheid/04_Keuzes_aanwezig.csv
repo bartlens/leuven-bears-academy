@@ -1,4 +1,3 @@
 waarde,label_nl,betekenis
-J,Ja,Kind is erbij
-N,Nee,Kind is afwezig
-?,Nog niet zeker,We weten het nog niet
+TRUE,Vinkje aan (groen),Kind komt / kan aanwezig zijn
+FALSE,Geen vinkje (rood),Komt niet / nog niet bevestigd

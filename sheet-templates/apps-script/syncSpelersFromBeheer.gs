@@ -13,11 +13,14 @@
  * Optioneel (Apps Script-editor): genereerTrainingenUitWeekschema()
  * vult Beheer → Trainingen_data voor de website-kalender (10 weken).
  *
- * Effect van syncAllesVanuitBeheer:
- * - Spelers_ref + Aanwezigheid-kolommen vanuit Beheer!Spelers
- * - Sessies herschreven vanuit weekschema + Trainingen_data + Matchen
- * - Aanwezigheid-matrix: nieuwe rijen erbij; bestaande vinkjes blijven staan
- * - Speelercellen = checkboxes (aan = komt / uit = komt niet)
+ * Effect van syncAllesVanuitBeheer (U10 C-oriëntatie):
+ * - Spelers_ref vanuit Beheer!Spelers (gesorteerd op nummer)
+ * - Sessies-index (coach) vanuit weekschema + Trainingen_data + Matchen
+ * - Tab Trainingen: 1 rij per kind, kolommen = trainingen, vinkje = komt, Totaal
+ * - Tab Wedstrijden: 1 rij per kind, per match 2 kolommen
+ *   (Kan aanwezig zijn + Heeft gespeeld), Totaal gespeeld
+ * - Bestaande vinkjes blijven via (speler + sessie_id[+veld]); ook migratie
+ *   vanuit oude tab Aanwezigheid (sessie-rijen)
  * - Aanwezigheid_per_speler: alleen nieuwe sessie×speler-rijen
  */
 
@@ -31,37 +34,54 @@ var WEEKDAY_NUM_ = {
   sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6,
 };
 
-/** Volledige sync: spelers + sessies + matrix. */
+var SHEET_TRAININGEN_ = 'Trainingen';
+var SHEET_WEDSTRIJDEN_ = 'Wedstrijden';
+var SHEET_OUD_MATRIX_ = 'Aanwezigheid';
+
+/** Volledige sync: spelers + sessies + matrices. */
 function syncAllesVanuitBeheer() {
   var ss = SpreadsheetApp.getActive();
   var beheer = openBeheer_(ss);
   var players = readPlayersFromBeheer_(beheer);
 
   writeSpelersRef_(ss, players);
-  ensureMatrixColumns_(ss, players);
 
   var sessies = buildSessiesVanuitBeheer_(beheer);
   writeSessies_(ss, sessies);
-  ensureMatrixRows_(ss, sessies);
-  applyAttendanceCheckboxes_(ss, players);
+
+  var trainings = sessies.filter(function (s) { return s.type === 'training'; });
+  var matches = sessies.filter(function (s) { return s.type === 'match'; });
+
+  var existing = collectAllAttendanceMaps_(ss);
+  writeTrainingenMatrix_(ss, players, trainings, existing);
+  writeWedstrijdenMatrix_(ss, players, matches, existing);
   ensureTallRows_(ss, players, sessies);
 
   ss.toast(
-    players.length + ' spelers · ' + sessies.length + ' sessies bijgewerkt (vinkjes bewaard).',
+    players.length + ' spelers · ' + trainings.length + ' trainingen · ' +
+      matches.length + ' wedstrijden (vinkjes bewaard).',
     'Academy sync',
     8
   );
 }
 
-/** Alleen spelers (oude entry — blijft werken). */
+/** Alleen spelers (herbouw matrices met bestaande Sessies-index). */
 function syncSpelersFromBeheer() {
   var ss = SpreadsheetApp.getActive();
   var beheer = openBeheer_(ss);
   var players = readPlayersFromBeheer_(beheer);
 
   writeSpelersRef_(ss, players);
-  ensureMatrixColumns_(ss, players);
-  ensureTallRows_(ss, players, null);
+
+  var sessiesSheet = ss.getSheetByName('Sessies');
+  var sessies = sessiesSheet ? readSessiesFromSheet_(sessiesSheet) : [];
+  var trainings = sessies.filter(function (s) { return s.type === 'training'; });
+  var matches = sessies.filter(function (s) { return s.type === 'match'; });
+
+  var existing = collectAllAttendanceMaps_(ss);
+  writeTrainingenMatrix_(ss, players, trainings, existing);
+  writeWedstrijdenMatrix_(ss, players, matches, existing);
+  ensureTallRows_(ss, players, sessies);
 
   ss.toast(players.length + ' spelers gesynchroniseerd.', 'Academy sync', 6);
 }
@@ -84,7 +104,6 @@ function genereerTrainingenUitWeekschema() {
   var headers = dataSheet.getRange(1, 1, 1, Math.max(dataSheet.getLastColumn(), 1)).getValues()[0].map(String);
   var colCount = Math.max(headers.length, 6);
 
-  // Zorg voor standaard headers als leeg
   if (!headers[0] || String(headers[0]).trim() !== 'datum') {
     dataSheet.clear();
     dataSheet.getRange(1, 1, 1, 6).setValues([['datum', 'status', 'start', 'einde', 'locatie', 'notitie']]);
@@ -107,7 +126,7 @@ function genereerTrainingenUitWeekschema() {
   if (iNot < 0) iNot = 5;
 
   candidates.forEach(function (c) {
-    if (existing[c.datum]) return; // al aanwezig (ook status=nee) → niet overschrijven
+    if (existing[c.datum]) return;
     var row = [];
     for (var i = 0; i < colCount; i++) row.push('');
     row[iDat] = c.datum;
@@ -179,13 +198,14 @@ function readPlayersFromBeheer_(beheer) {
       header: '#' + num + ' ' + naam,
     });
   }
+  players.sort(function (a, b) { return Number(a.nummer) - Number(b.nummer); });
   return players;
 }
 
 function writeSpelersRef_(ss, players) {
   var sh = ss.getSheetByName('Spelers_ref') || ss.insertSheet('Spelers_ref');
   sh.clear();
-  sh.getRange(1, 1, 1, 4).setValues([['nummer', 'voornaam', 'kolom_header', 'actief']]);
+  sh.getRange(1, 1, 1, 4).setValues([['nummer', 'voornaam', 'rij_label', 'actief']]);
   if (!players.length) return;
   var rows = players.map(function (p) {
     return [p.nummer, p.voornaam, p.header, 'ja'];
@@ -193,37 +213,7 @@ function writeSpelersRef_(ss, players) {
   sh.getRange(2, 1, rows.length, 4).setValues(rows);
 }
 
-function ensureMatrixColumns_(ss, players) {
-  var sh = ss.getSheetByName('Aanwezigheid');
-  if (!sh) return;
-  var lastCol = Math.max(sh.getLastColumn(), 1);
-  var headers = sh.getRange(1, 1, 1, lastCol).getValues()[0].map(String);
-
-  players.forEach(function (p) {
-    if (headers.indexOf(p.header) === -1) {
-      var col = sh.getLastColumn() + 1;
-      var noteIdx = headers.indexOf('notitie_coach');
-      if (noteIdx >= 0) {
-        sh.insertColumnBefore(noteIdx + 1);
-        col = noteIdx + 1;
-        headers.splice(noteIdx, 0, p.header);
-      } else {
-        headers.push(p.header);
-      }
-      sh.getRange(1, col).setValue(p.header);
-    }
-  });
-}
-
 // ── Sessies bouwen ───────────────────────────────────────────────────
-
-/**
- * Trainingen: weekschema (komende 10 weken) + Trainingen_data overrides/extras.
- * Matchen: Beheer → Matchen (extras / korte rijen voor aanwezigheid).
- */
-function syncSessiesVanuitBeheer_(beheer) {
-  return buildSessiesVanuitBeheer_(beheer);
-}
 
 function buildSessiesVanuitBeheer_(beheer) {
   var week = readTrainingenWeek_(beheer);
@@ -231,10 +221,9 @@ function buildSessiesVanuitBeheer_(beheer) {
   var dataMap = dataSheet ? readTrainingenDataMap_(dataSheet) : {};
   var byId = {};
 
-  // 1) Weekschema → kandidaten
   expandWeekDates_(week, 10).forEach(function (c) {
     var override = dataMap[c.datum];
-    if (override && isNee_(override.status)) return; // afgelast
+    if (override && isNee_(override.status)) return;
     var start = c.start;
     var locatie = c.locatie;
     var notitie = '';
@@ -247,15 +236,13 @@ function buildSessiesVanuitBeheer_(beheer) {
     byId[sessie.sessie_id] = sessie;
   });
 
-  // 2) Extra / alle Trainingen_data status != nee (one-offs + bestaande data)
   Object.keys(dataMap).forEach(function (datum) {
     var d = dataMap[datum];
     if (isNee_(d.status)) return;
-    if (byId['t-' + datum]) return; // al via week
+    if (byId['t-' + datum]) return;
     byId['t-' + datum] = makeTrainingSessie_(datum, d.start, d.locatie, d.notitie);
   });
 
-  // 3) Matchen
   var matchen = readMatchen_(beheer);
   var matchIdsPerDay = {};
   matchen.forEach(function (m) {
@@ -278,6 +265,7 @@ function buildSessiesVanuitBeheer_(beheer) {
       uur: m.uur || '',
       label: m.label,
       locatie: m.locatie || '',
+      tegenstander: m.tegenstander || '',
       zichtbaar: 'ja',
     };
   });
@@ -298,9 +286,6 @@ function makeTrainingSessie_(datum, start, locatie, notitie) {
   var shortDay = WEEKDAY_SHORT_[wd] || '';
   var shortLoc = shortLoc_(locatie);
   var label = ('Training ' + shortDay + (shortLoc ? ' ' + shortLoc : '')).trim();
-  if (notitie) {
-    // nietitie niet in label — blijft in Beheer; label simpel houden
-  }
   return {
     sessie_id: 't-' + datum,
     type: 'training',
@@ -392,10 +377,9 @@ function expandWeekDates_(week, weeksAhead) {
   for (var offset = 0; offset < totalDays; offset++) {
     var dt = new Date(Date.UTC(y, m - 1, d + offset));
     var iso = Utilities.formatDate(dt, 'UTC', 'yyyy-MM-dd');
-    // Weekdag van de kalenderdatum (YYYY-MM-DD) zonder TZ-shift
     var parts = iso.split('-');
     var utcDate = new Date(Date.UTC(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])));
-    var wd = utcDate.getUTCDay(); // 0=Sun — klopt voor kalenderdatum zonder TZ-shift
+    var wd = utcDate.getUTCDay();
     var slot = byWd[wd];
     if (!slot) continue;
     out.push({
@@ -428,7 +412,6 @@ function readMatchen_(beheer) {
     var datum = formatDateIso_(row[iDat]);
     var tegen = String(iTegen >= 0 ? row[iTegen] || '' : '').trim();
     if (!datum && !tegen) continue;
-    // Skip uitleg / voorbeeld / lege rijen
     var firstCell = String(row[0] || '').trim().toLowerCase();
     if (firstCell.indexOf('_uitleg') === 0) continue;
     if (!datum) continue;
@@ -446,6 +429,7 @@ function readMatchen_(beheer) {
       datum: datum,
       uur: formatTime_(iUur >= 0 ? row[iUur] : ''),
       label: thuisLabel + ' vs ' + tegenClean,
+      tegenstander: tegenClean,
       locatie: String(iLoc >= 0 ? row[iLoc] || '' : '').trim(),
     });
   }
@@ -464,110 +448,316 @@ function writeSessies_(ss, sessies) {
   sh.getRange(2, 1, rows.length, headers.length).setValues(rows);
 }
 
+// ── Matrices (U10 C-oriëntatie) ──────────────────────────────────────
+
 /**
- * Matrix: bestaande rijen behouden (vinkjes nooit wissen).
- * Lead-kolommen (datum/type/label) updaten; ontbrekende sessie-rijen appenden.
+ * Verzamel bestaande vinkjes uit Trainingen, Wedstrijden én oude Aanwezigheid.
+ * Keys: "playerKey|sessie_id" (training / aanwezig) of "playerKey|sessie_id|gespeeld".
  */
-function ensureMatrixRows_(ss, sessies) {
-  var sh = ss.getSheetByName('Aanwezigheid');
-  if (!sh) return;
+function collectAllAttendanceMaps_(ss) {
+  var map = {};
+  mergeAttendanceMap_(map, readTrainingenAttendanceMap_(ss.getSheetByName(SHEET_TRAININGEN_)));
+  mergeAttendanceMap_(map, readWedstrijdenAttendanceMap_(ss.getSheetByName(SHEET_WEDSTRIJDEN_)));
+  mergeAttendanceMap_(map, readLegacyAanwezigheidMap_(ss.getSheetByName(SHEET_OUD_MATRIX_)));
+  return map;
+}
 
-  var lastCol = Math.max(sh.getLastColumn(), 1);
-  var lastRow = Math.max(sh.getLastRow(), 1);
-  var headers = sh.getRange(1, 1, 1, lastCol).getValues()[0].map(String);
-  var iId = headers.indexOf('sessie_id');
-  var iDat = headers.indexOf('datum');
-  var iType = headers.indexOf('type');
-  var iLab = headers.indexOf('label');
+function mergeAttendanceMap_(into, from) {
+  if (!from) return;
+  Object.keys(from).forEach(function (k) { into[k] = from[k]; });
+}
 
-  // Zorg voor standaard headers als sheet leeg/nieuw
-  if (iId < 0) {
-    sh.clear();
-    var lead = ['sessie_id', 'datum', 'type', 'label'];
-    sh.getRange(1, 1, 1, lead.length).setValues([lead]);
-    headers = lead.slice();
-    iId = 0; iDat = 1; iType = 2; iLab = 3;
-    lastCol = lead.length;
-    lastRow = 1;
+function lookupAtt_(map, keys, sid, field) {
+  var suffix = field ? '|' + field : '';
+  for (var i = 0; i < keys.length; i++) {
+    var k = keys[i] + '|' + sid + suffix;
+    if (Object.prototype.hasOwnProperty.call(map, k)) return map[k];
   }
-
-  var existing = {}; // sessie_id → row number (1-based)
-  if (lastRow >= 2) {
-    var idCol = sh.getRange(2, iId + 1, lastRow, iId + 1).getValues();
-    for (var r = 0; r < idCol.length; r++) {
-      var sid = String(idCol[r][0] || '').trim();
-      if (sid) existing[sid] = r + 2;
+  // Fallback: training/aanwezig zonder veld-suffix
+  if (!field || field === 'aan') {
+    for (var j = 0; j < keys.length; j++) {
+      var k2 = keys[j] + '|' + sid;
+      if (Object.prototype.hasOwnProperty.call(map, k2)) return map[k2];
     }
   }
+  return false;
+}
 
-  var toAppend = [];
-  sessies.forEach(function (s) {
-    if (existing[s.sessie_id]) {
-      var rowNum = existing[s.sessie_id];
-      // Alleen lead-info updaten — speelercellen met rust laten
-      if (iDat >= 0) sh.getRange(rowNum, iDat + 1).setValue(s.datum);
-      if (iType >= 0) sh.getRange(rowNum, iType + 1).setValue(s.type);
-      if (iLab >= 0) sh.getRange(rowNum, iLab + 1).setValue(s.label);
-    } else {
-      var row = [];
-      for (var c = 0; c < headers.length; c++) row.push('');
-      row[iId] = s.sessie_id;
-      if (iDat >= 0) row[iDat] = s.datum;
-      if (iType >= 0) row[iType] = s.type;
-      if (iLab >= 0) row[iLab] = s.label;
-      toAppend.push(row);
-      existing[s.sessie_id] = -1;
-    }
+/**
+ * Trainingen — zoals origineel U10 C trainingsblad:
+ * Row 1 labels (DD/MM + label) · Row 2 sessie_id (verborgen) · Col A Naam · Totaal
+ * + Totaal-rij onderaan. Checkboxes = komt.
+ */
+function writeTrainingenMatrix_(ss, players, trainings, existing) {
+  var sh = ss.getSheetByName(SHEET_TRAININGEN_) || ss.insertSheet(SHEET_TRAININGEN_);
+  var sorted = (players || []).slice().sort(function (a, b) {
+    return Number(a.nummer) - Number(b.nummer);
   });
+  var visible = (trainings || []).filter(function (s) {
+    return String(s.zichtbaar || 'ja').toLowerCase() !== 'nee';
+  });
+  var nSess = visible.length;
+  var nCols = 1 + nSess + 1;
 
-  if (toAppend.length) {
-    sh.getRange(sh.getLastRow() + 1, 1, toAppend.length, headers.length).setValues(toAppend);
+  var headerRow = ['Naam'];
+  var idRow = ['sessie_id'];
+  for (var i = 0; i < nSess; i++) {
+    headerRow.push(trainingHeaderLabel_(visible[i]));
+    idRow.push(String(visible[i].sessie_id || ''));
+  }
+  headerRow.push('Totaal');
+  idRow.push('');
+
+  var dataRows = [];
+  for (var p = 0; p < sorted.length; p++) {
+    var player = sorted[p];
+    var row = [player.voornaam]; // zoals origineel: voornaam links
+    var keys = playerMatchKeys_(player);
+    for (var s = 0; s < nSess; s++) {
+      row.push(lookupAtt_(existing, keys, String(visible[s].sessie_id || ''), null));
+    }
+    row.push('');
+    dataRows.push(row);
+  }
+
+  // Totaal-rij (COUNTIF per kolom)
+  var totalRow = ['Totaal'];
+  for (var t = 0; t < nSess; t++) totalRow.push('');
+  totalRow.push('');
+
+  resetSheet_(sh);
+  var all = [headerRow, idRow].concat(dataRows);
+  if (sorted.length) all.push(totalRow);
+  sh.getRange(1, 1, all.length, nCols).setValues(all);
+
+  var firstPlayerRow = 3;
+  var lastPlayerRow = 2 + sorted.length;
+  for (var r = 0; r < sorted.length; r++) {
+    var rowNum = firstPlayerRow + r;
+    if (nSess > 0) {
+      sh.getRange(rowNum, nCols).setFormula(
+        '=COUNTIF(' + colToLetter_(2) + rowNum + ':' + colToLetter_(1 + nSess) + rowNum + ',TRUE)'
+      );
+    } else {
+      sh.getRange(rowNum, nCols).setValue(0);
+    }
+  }
+  if (sorted.length && nSess > 0) {
+    var totRowNum = lastPlayerRow + 1;
+    for (var c = 0; c < nSess; c++) {
+      var colLetter = colToLetter_(2 + c);
+      sh.getRange(totRowNum, 2 + c).setFormula(
+        '=COUNTIF(' + colLetter + firstPlayerRow + ':' + colLetter + lastPlayerRow + ',TRUE)'
+      );
+    }
+  }
+
+  styleMatrixHeader_(sh, nCols, 48);
+  if (sh.getMaxRows() >= 2) sh.hideRows(2);
+  sh.setFrozenColumns(1);
+  sh.setFrozenRows(1);
+  sh.setColumnWidth(1, 130);
+  for (var cw = 2; cw <= 1 + nSess; cw++) sh.setColumnWidth(cw, 88);
+  sh.setColumnWidth(nCols, 70);
+
+  if (sorted.length && nSess > 0) {
+    applyCheckboxesWithColors_(sh.getRange(firstPlayerRow, 2, lastPlayerRow, 1 + nSess));
   }
 }
 
 /**
- * Speelercellen → Google-checkboxes.
- * J/ja/✅ → aan; N/nee/?/leeg → uit. Bestaande TRUE/FALSE blijven.
+ * Wedstrijden — zoals origineel U10 C matchblad:
+ * Per match 2 kolommen: Kan aanwezig zijn + Heeft gespeeld (merged header).
+ * Row 1 match-label · Row 2 sessie_id (verborgen, op 1e kolom van paar)
+ * Row 3 sublabels · spelers · Totaal-rij · Totaal-kolom (= gespeeld).
  */
-function applyAttendanceCheckboxes_(ss, players) {
-  var sh = ss.getSheetByName('Aanwezigheid');
-  if (!sh || !players || !players.length) return;
-
-  var lastCol = Math.max(sh.getLastColumn(), 1);
-  var lastRow = Math.max(sh.getLastRow(), 1);
-  if (lastRow < 2) return;
-
-  var headers = sh.getRange(1, 1, 1, lastCol).getValues()[0].map(String);
-  var lead = { sessie_id: 1, datum: 1, type: 1, label: 1, notitie_coach: 1, uur: 1, locatie: 1 };
-
-  players.forEach(function (p) {
-    var colIdx = headers.indexOf(p.header);
-    if (colIdx < 0) return;
-    var range = sh.getRange(2, colIdx + 1, lastRow, colIdx + 1);
-    var values = range.getValues();
-    for (var i = 0; i < values.length; i++) {
-      values[i][0] = toCheckboxBool_(values[i][0]);
-    }
-    range.setValues(values);
-    range.insertCheckboxes();
+function writeWedstrijdenMatrix_(ss, players, matches, existing) {
+  var sh = ss.getSheetByName(SHEET_WEDSTRIJDEN_) || ss.insertSheet(SHEET_WEDSTRIJDEN_);
+  var sorted = (players || []).slice().sort(function (a, b) {
+    return Number(a.nummer) - Number(b.nummer);
   });
+  var visible = (matches || []).filter(function (s) {
+    return String(s.zichtbaar || 'ja').toLowerCase() !== 'nee';
+  });
+  var nMatch = visible.length;
+  var nCols = 1 + nMatch * 2 + 1; // Naam + pairs + Totaal
 
-  // Ook losse kolommen die op #nummer lijken (als Spelers_ref headers afwijken)
-  for (var c = 0; c < headers.length; c++) {
-    var h = String(headers[c] || '').trim();
-    if (!h || lead[h]) continue;
-    if (h.charAt(0) !== '#') continue;
-    var already = false;
-    for (var pi = 0; pi < players.length; pi++) {
-      if (players[pi].header === h) { already = true; break; }
-    }
-    if (already) continue;
-    var r2 = sh.getRange(2, c + 1, lastRow, c + 1);
-    var vals = r2.getValues();
-    for (var j = 0; j < vals.length; j++) vals[j][0] = toCheckboxBool_(vals[j][0]);
-    r2.setValues(vals);
-    r2.insertCheckboxes();
+  var headerRow = ['Naam'];
+  var idRow = ['sessie_id'];
+  var subRow = [''];
+  for (var i = 0; i < nMatch; i++) {
+    headerRow.push(matchHeaderLabel_(visible[i]));
+    headerRow.push(''); // merge partner
+    idRow.push(String(visible[i].sessie_id || ''));
+    idRow.push(String(visible[i].sessie_id || '') + '|gespeeld');
+    subRow.push('Kan aanwezig zijn');
+    subRow.push('Heeft gespeeld');
   }
+  headerRow.push('Totaal gespeeld');
+  idRow.push('');
+  subRow.push('');
+
+  var dataRows = [];
+  for (var p = 0; p < sorted.length; p++) {
+    var player = sorted[p];
+    var row = [player.voornaam];
+    var keys = playerMatchKeys_(player);
+    for (var s = 0; s < nMatch; s++) {
+      var sid = String(visible[s].sessie_id || '');
+      row.push(lookupAtt_(existing, keys, sid, 'aan'));
+      row.push(lookupAtt_(existing, keys, sid, 'gespeeld'));
+    }
+    row.push('');
+    dataRows.push(row);
+  }
+
+  var totalRow = ['Totaal'];
+  for (var t = 0; t < nMatch * 2; t++) totalRow.push('');
+  totalRow.push('');
+
+  resetSheet_(sh);
+  var all = [headerRow, idRow, subRow].concat(dataRows);
+  if (sorted.length) all.push(totalRow);
+  sh.getRange(1, 1, all.length, nCols).setValues(all);
+
+  // Merge match headers (row 1)
+  for (var m = 0; m < nMatch; m++) {
+    var c1 = 2 + m * 2;
+    sh.getRange(1, c1, 1, c1 + 1).merge();
+  }
+
+  var firstPlayerRow = 4;
+  var lastPlayerRow = 3 + sorted.length;
+  for (var r = 0; r < sorted.length; r++) {
+    var rn = firstPlayerRow + r;
+    if (nMatch > 0) {
+      // Som van "Heeft gespeeld"-kolommen (niet aaneengesloten → N()+N()+…)
+      var bits = [];
+      for (var mj = 0; mj < nMatch; mj++) {
+        bits.push('N(' + colToLetter_(3 + mj * 2) + rn + ')');
+      }
+      sh.getRange(rn, nCols).setFormula('=' + bits.join('+'));
+    } else {
+      sh.getRange(rn, nCols).setValue(0);
+    }
+  }
+
+  if (sorted.length && nMatch > 0) {
+    var totRowNum = lastPlayerRow + 1;
+    for (var c = 0; c < nMatch * 2; c++) {
+      var colLetter = colToLetter_(2 + c);
+      sh.getRange(totRowNum, 2 + c).setFormula(
+        '=COUNTIF(' + colLetter + firstPlayerRow + ':' + colLetter + lastPlayerRow + ',TRUE)'
+      );
+    }
+  }
+
+  styleMatrixHeader_(sh, nCols, 64);
+  sh.getRange(3, 1, 3, nCols).setFontWeight('bold').setWrap(true).setHorizontalAlignment('center');
+  if (sh.getMaxRows() >= 2) sh.hideRows(2);
+  sh.setFrozenColumns(1);
+  sh.setFrozenRows(1);
+  sh.setColumnWidth(1, 130);
+  for (var cw = 2; cw < nCols; cw++) sh.setColumnWidth(cw, 78);
+  sh.setColumnWidth(nCols, 90);
+
+  if (sorted.length && nMatch > 0) {
+    // Aanwezig-kolommen (groen/rood) + gespeeld-kolommen (neutrale checkbox)
+    for (var mk = 0; mk < nMatch; mk++) {
+      var aanCol = 2 + mk * 2;
+      var gesCol = 3 + mk * 2;
+      applyCheckboxesWithColors_(sh.getRange(firstPlayerRow, aanCol, lastPlayerRow, aanCol));
+      applyCheckboxesPlain_(sh.getRange(firstPlayerRow, gesCol, lastPlayerRow, gesCol));
+    }
+  }
+}
+
+function trainingHeaderLabel_(s) {
+  var ddmm = formatDateDdMm_(s.datum);
+  var label = String(s.label || '').trim();
+  if (ddmm && label) return ddmm + '\n' + label;
+  return ddmm || label || String(s.sessie_id || '');
+}
+
+function matchHeaderLabel_(s) {
+  // Zoals origineel: datum + tegenstander (+ thuis/uit + uur)
+  var lines = [];
+  var ddmm = formatDateDdMm_(s.datum);
+  var wd = weekdayIndexFromIso_(s.datum);
+  var dayName = WEEKDAYS_NL_[wd] || '';
+  if (dayName) dayName = dayName.charAt(0).toUpperCase() + dayName.slice(1);
+  if (ddmm) lines.push((dayName ? dayName + ' ' : '') + ddmm);
+  var tegen = String(s.tegenstander || '').trim();
+  if (!tegen) {
+    // strip "Thuis vs " / "Uit vs "
+    tegen = String(s.label || '').replace(/^(Thuis|Uit)\s+vs\s+/i, '').trim();
+  }
+  if (tegen) lines.push(tegen);
+  var where = [];
+  if (s.label && /^(Thuis|Uit)/i.test(String(s.label))) {
+    where.push(String(s.label).indexOf('Uit') === 0 ? 'Uit' : 'Thuis');
+  }
+  if (s.uur) where.push(String(s.uur));
+  if (s.locatie) where.push(shortLoc_(s.locatie) || s.locatie);
+  if (where.length) lines.push(where.join(' · '));
+  return lines.join('\n') || String(s.sessie_id || '');
+}
+
+function styleMatrixHeader_(sh, nCols, rowHeight) {
+  sh.getRange(1, 1, 1, nCols)
+    .setFontWeight('bold')
+    .setWrap(true)
+    .setVerticalAlignment('middle')
+    .setHorizontalAlignment('center');
+  sh.setRowHeight(1, rowHeight || 52);
+}
+
+function resetSheet_(sh) {
+  sh.clear();
+  sh.clearConditionalFormatRules();
+  try {
+    var merges = sh.getRange(1, 1, sh.getMaxRows(), sh.getMaxColumns()).getMergedRanges();
+    for (var i = 0; i < merges.length; i++) merges[i].breakApart();
+  } catch (e) {}
+  try { sh.showRows(1, Math.max(sh.getMaxRows(), 3)); } catch (e2) {}
+  try { sh.setFrozenColumns(0); sh.setFrozenRows(0); } catch (e3) {}
+}
+
+function applyCheckboxesWithColors_(range) {
+  var values = range.getValues();
+  for (var r = 0; r < values.length; r++) {
+    for (var c = 0; c < values[r].length; c++) {
+      values[r][c] = toCheckboxBool_(values[r][c]);
+    }
+  }
+  range.setValues(values);
+  range.insertCheckboxes();
+
+  // TRUE = lichtgroen, FALSE = lichtrood (duidelijk voor ouders)
+  var sheet = range.getSheet();
+  var existing = sheet.getConditionalFormatRules();
+  existing.push(SpreadsheetApp.newConditionalFormatRule()
+    .whenCellTrue()
+    .setBackground('#C8E6C9')
+    .setRanges([range])
+    .build());
+  existing.push(SpreadsheetApp.newConditionalFormatRule()
+    .whenCellFalse()
+    .setBackground('#FFCDD2')
+    .setRanges([range])
+    .build());
+  sheet.setConditionalFormatRules(existing);
+}
+
+function applyCheckboxesPlain_(range) {
+  var values = range.getValues();
+  for (var r = 0; r < values.length; r++) {
+    for (var c = 0; c < values[r].length; c++) {
+      values[r][c] = toCheckboxBool_(values[r][c]);
+    }
+  }
+  range.setValues(values);
+  range.insertCheckboxes();
 }
 
 function toCheckboxBool_(v) {
@@ -578,10 +768,186 @@ function toCheckboxBool_(v) {
   return false;
 }
 
+// ── Attendance map readers ───────────────────────────────────────────
+
+function readTrainingenAttendanceMap_(sh) {
+  var map = {};
+  if (!sh || sh.getLastRow() < 2 || sh.getLastColumn() < 2) return map;
+  var values = sh.getRange(1, 1, sh.getLastRow(), sh.getLastColumn()).getValues();
+  var headers = values[0];
+  var row2 = values[1] || [];
+  var isNew = String(row2[0] || '').trim().toLowerCase() === 'sessie_id' ||
+    looksLikeSessieIdRow_(row2);
+  if (!isNew) return map;
+
+  var sessIds = [];
+  for (var c = 1; c < headers.length; c++) {
+    var h = String(headers[c] || '').trim();
+    var sid = String(row2[c] || '').trim();
+    if (/^totaal/i.test(h) || !sid || sid.indexOf('|') >= 0) sessIds.push(null);
+    else sessIds.push(sid);
+  }
+  for (var r = 2; r < values.length; r++) {
+    var name = String(values[r][0] || '').trim();
+    if (!name || /^totaal$/i.test(name)) continue;
+    var keys = parsePlayerKeysFromLabel_(name);
+    for (var ci = 0; ci < sessIds.length; ci++) {
+      if (!sessIds[ci]) continue;
+      var b = toCheckboxBool_(values[r][ci + 1]);
+      storePlayerKeys_(map, keys, sessIds[ci], null, b);
+    }
+  }
+  return map;
+}
+
+function readWedstrijdenAttendanceMap_(sh) {
+  var map = {};
+  if (!sh || sh.getLastRow() < 3 || sh.getLastColumn() < 2) return map;
+  var values = sh.getRange(1, 1, sh.getLastRow(), sh.getLastColumn()).getValues();
+  var row2 = values[1] || [];
+  if (!(String(row2[0] || '').trim().toLowerCase() === 'sessie_id' || looksLikeSessieIdRow_(row2))) {
+    return map;
+  }
+
+  // Bepaal data-start: rij met "Kan aanwezig zijn" of rij 3
+  var dataStart = 3;
+  for (var r = 2; r < Math.min(values.length, 6); r++) {
+    var joined = values[r].map(String).join(' ').toLowerCase();
+    if (joined.indexOf('kan aanwezig') >= 0 || joined.indexOf('heeft gespeeld') >= 0) {
+      dataStart = r + 1;
+      break;
+    }
+  }
+
+  var pairs = [];
+  for (var c = 1; c < row2.length; c++) {
+    var raw = String(row2[c] || '').trim();
+    if (!raw || /^totaal/i.test(String(values[0][c] || ''))) continue;
+    if (raw.indexOf('|gespeeld') >= 0) {
+      var sidG = raw.split('|')[0];
+      pairs.push({ col: c, sid: sidG, field: 'gespeeld' });
+    } else if (/^[tm]-/.test(raw)) {
+      pairs.push({ col: c, sid: raw, field: 'aan' });
+    }
+  }
+
+  for (var r2 = dataStart; r2 < values.length; r2++) {
+    var name = String(values[r2][0] || '').trim();
+    if (!name || /^totaal$/i.test(name)) continue;
+    var keys = parsePlayerKeysFromLabel_(name);
+    for (var pi = 0; pi < pairs.length; pi++) {
+      var p = pairs[pi];
+      var b = toCheckboxBool_(values[r2][p.col]);
+      storePlayerKeys_(map, keys, p.sid, p.field, b);
+      if (p.field === 'aan') storePlayerKeys_(map, keys, p.sid, null, b);
+    }
+  }
+  return map;
+}
+
+/** Oude matrix: sessie = rij, speler = kolom. */
+function readLegacyAanwezigheidMap_(sh) {
+  var map = {};
+  if (!sh || sh.getLastRow() < 2 || sh.getLastColumn() < 2) return map;
+  var values = sh.getRange(1, 1, sh.getLastRow(), sh.getLastColumn()).getValues();
+  var headers = values[0].map(function (h) { return String(h || ''); });
+
+  // Nieuwe layout per ongeluk op Aanwezigheid? hergebruik training-reader
+  var row2 = values[1] || [];
+  if (String(row2[0] || '').trim().toLowerCase() === 'sessie_id' || looksLikeSessieIdRow_(row2)) {
+    return readTrainingenAttendanceMap_(sh);
+  }
+
+  var iId = headers.indexOf('sessie_id');
+  if (iId < 0) return map;
+  var lead = {
+    sessie_id: 1, datum: 1, type: 1, label: 1,
+    notitie_coach: 1, uur: 1, locatie: 1, totaal: 1,
+  };
+  var playerCols = [];
+  for (var c = 0; c < headers.length; c++) {
+    var h = String(headers[c] || '').trim();
+    if (!h || lead[h.toLowerCase()]) continue;
+    playerCols.push({ col: c, keys: parsePlayerKeysFromLabel_(h) });
+  }
+  for (var r = 1; r < values.length; r++) {
+    var sid = String(values[r][iId] || '').trim();
+    if (!sid) continue;
+    for (var pi = 0; pi < playerCols.length; pi++) {
+      var pc = playerCols[pi];
+      var b = toCheckboxBool_(values[r][pc.col]);
+      storePlayerKeys_(map, pc.keys, sid, null, b);
+      storePlayerKeys_(map, pc.keys, sid, 'aan', b);
+    }
+  }
+  return map;
+}
+
+function looksLikeSessieIdRow_(row) {
+  for (var c = 1; c < row.length; c++) {
+    if (/^[tm]-/.test(String(row[c] || '').trim())) return true;
+  }
+  return false;
+}
+
+function storePlayerKeys_(map, keys, sid, field, boolVal) {
+  var suffix = field ? '|' + field : '';
+  for (var i = 0; i < keys.length; i++) {
+    map[keys[i] + '|' + sid + suffix] = boolVal;
+  }
+}
+
+function playerMatchKeys_(player) {
+  return parsePlayerKeysFromLabel_(player.header).concat([
+    String(player.nummer),
+    '#' + player.nummer,
+    String(player.voornaam || '').trim(),
+    String(player.voornaam || '').trim().toLowerCase(),
+  ]);
+}
+
+function parsePlayerKeysFromLabel_(label) {
+  var s = String(label || '').trim();
+  var keys = [];
+  if (!s) return keys;
+  keys.push(s);
+  keys.push(s.toLowerCase());
+  var m = s.match(/^#\s*(\d+)\s+(.+)$/);
+  if (m) {
+    keys.push(m[1]);
+    keys.push('#' + m[1]);
+    keys.push('#' + m[1] + ' ' + m[2].trim());
+    keys.push(m[2].trim());
+    keys.push(m[2].trim().toLowerCase());
+  } else {
+    m = s.match(/^#(\d+)$/);
+    if (m) {
+      keys.push(m[1]);
+      keys.push('#' + m[1]);
+    }
+  }
+  return keys;
+}
+
+function colToLetter_(col) {
+  var s = '';
+  var n = Number(col);
+  while (n > 0) {
+    var r = (n - 1) % 26;
+    s = String.fromCharCode(65 + r) + s;
+    n = Math.floor((n - 1) / 26);
+  }
+  return s;
+}
+
+function formatDateDdMm_(iso) {
+  var parts = String(iso || '').split('-');
+  if (parts.length >= 3) return pad2_(parts[2]) + '/' + pad2_(parts[1]);
+  return String(iso || '');
+}
+
 /**
  * Tall format: alleen nieuwe sessie×speler-combo's.
- * @param {Object[]} players
- * @param {Object[]|null} sessies — als null, lees uit tab Sessies
  */
 function ensureTallRows_(ss, players, sessies) {
   var tall = ss.getSheetByName('Aanwezigheid_per_speler');
@@ -615,15 +981,7 @@ function ensureTallRows_(ss, players, sessies) {
       var key = sid + '|' + String(p.nummer);
       if (!existing[key]) {
         toAdd.push([
-          sid,
-          s.datum,
-          s.type,
-          s.label,
-          p.nummer,
-          p.voornaam,
-          '',
-          '',
-          '',
+          sid, s.datum, s.type, s.label, p.nummer, p.voornaam, '', '', '',
         ]);
         existing[key] = true;
       }
@@ -684,7 +1042,6 @@ function formatDateIso_(v) {
   var s = String(v).trim();
   var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (m) return m[1] + '-' + m[2] + '-' + m[3];
-  // dd/mm/yyyy of dd-mm-yyyy
   m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);
   if (m) {
     return m[3] + '-' + pad2_(m[2]) + '-' + pad2_(m[1]);

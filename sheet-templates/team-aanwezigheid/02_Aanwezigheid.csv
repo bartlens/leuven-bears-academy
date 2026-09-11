@@ -1,4 +1,5 @@
-sessie_id,datum,type,label,#1 Alfred,#2 Ilya,#3 Elias,#4 Felix,#5 Sam,#6 Bas D,#7 Jarne,#8 Charlie,#9 Jia Le,#10 Bas N,#11 Jacob,#12 Thomas,notitie_coach
-t-2026-09-14,2026-09-14,training,Training ma Heilig-Hart,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,"Voorbeeld — sync zet checkboxes"
-t-2026-09-17,2026-09-17,training,Training do Redingenhof,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,
-m-2026-09-27,2026-09-27,match,Uit vs Clem,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,
+_note,waarde
+layout,"Vervangen door tabs Trainingen + Wedstrijden (U10 C-oriëntatie: 1 rij per kind, kolommen = sessies)."
+Trainingen,"Zie 02_Trainingen.csv — vinkje = komt op training."
+Wedstrijden,"Zie 02_Wedstrijden.csv — per match: Kan aanwezig zijn + Heeft gespeeld."
+sync,"Academy sync schrijft Trainingen + Wedstrijden; oude tab Aanwezigheid wordt niet meer herschreven (waarden worden wel gemigreerd bij eerste sync)."

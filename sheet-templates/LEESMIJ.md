@@ -1,6 +1,6 @@
 # Google Sheets voor coaches (simpele handleiding)
 
-Doel: **jij vult Beheer in**, ouders vullen alleen **Aanwezigheid**. De website leest Beheer automatisch. Sessies voor aanwezigheid verschijnen **automatisch** na sync — je hoeft Sessies niet manueel bij te houden.
+Doel: **jij vult Beheer in**, ouders vullen alleen **Aanwezigheid** (tabs Trainingen + Wedstrijden). De website leest Beheer automatisch. Sessies verschijnen **automatisch** na sync — je hoeft Sessies niet manueel bij te houden.
 
 ## Wat heb je nodig?
 
@@ -31,10 +31,13 @@ Nummer + voornaam volstaat. Dropdowns (look/emoji) staan klaar; `random` = de si
 
 ## Aanwezigheid — voor ouders
 
+Layout zoals het oude U10 C-blad: **één rij per kind**, kolommen = trainingen/matchen.
+
 1. Tab **Lees_mij** / **Uitleg**: plak `beheer_sheet_id`.  
-2. Ouders zetten enkel een **vinkje** (checkbox) bij hun kind: aan = komt, uit = komt niet.  
-3. Spelers **niet** hier toevoegen — dat gebeurt in Beheer → Spelers.  
-4. Sessies **niet** manueel in Sessies typen — menu **Academy sync → Alles bijwerken**.
+2. Tab **Trainingen**: vinkje bij jouw kind = komt op training (groen/rood).  
+3. Tab **Wedstrijden**: per match **Kan aanwezig zijn** (ouders) + **Heeft gespeeld** (coach na de match).  
+4. Spelers **niet** hier toevoegen — dat gebeurt in Beheer → Spelers.  
+5. Sessies **niet** manueel typen — menu **Academy sync → Alles bijwerken**.
 
 ## Installatie sync (1× door coach / beheerder)
 
@@ -49,7 +52,7 @@ In de **Aanwezigheid**-spreadsheet:
 - **Alles bijwerken vanuit Beheer (spelers + trainingen + matchen)** → `syncAllesVanuitBeheer()`  
 - **Alleen spelers syncen** → `syncSpelersFromBeheer()`
 
-Bestaande J/N/?-antwoorden blijven staan; alleen nieuwe sessies/spelers komen erbij.
+Bestaande vinkjes blijven staan (ook na migratie van de oude matrix); alleen nieuwe sessies/spelers komen erbij.
 
 ### Optioneel: Trainingen_data vullen voor de website
 In de Apps Script-editor: run **`genereerTrainingenUitWeekschema()`**.  
