@@ -1,5 +1,6 @@
 import type { TeamMatch } from '../data/teamMatches'
 import type { TeamTraining } from '../data/teams'
+import type { DatedTraining } from '../sheet/beheerTypes'
 
 export type CalKind = 'training' | 'match'
 
@@ -148,6 +149,62 @@ export function buildTeamCalendarEvents(
     const from = sorted[0]!.dateIso
     const until = sorted[sorted.length - 1]!.dateIso
     trainingEvents = expandWeeklyTrainings(trainings, from, until)
+  }
+
+  return [...trainingEvents, ...matchEvents].sort((a, b) => {
+    const d = a.dateIso.localeCompare(b.dateIso)
+    if (d !== 0) return d
+    return a.time.localeCompare(b.time)
+  })
+}
+
+
+/** Prefer concrete Beheer Trainingen_data dates; fall back to weekly expansion. */
+export function buildTeamCalendarEventsFromSheet(
+  matches: TeamMatch[],
+  datedTrainings: DatedTraining[] = [],
+  weeklyTrainings: TeamTraining[] = [],
+): CalEvent[] {
+  const matchEvents: CalEvent[] = matches.map((m) => ({
+    id: m.id,
+    kind: 'match' as const,
+    dateIso: m.dateIso,
+    time: m.time,
+    title:
+      m.venue === 'thuis'
+        ? `Thuis vs ${m.opponent}`
+        : m.venue === 'uit'
+          ? `Uit vs ${m.opponent}`
+          : `vs ${m.opponent}`,
+    location: m.location,
+    meta:
+      m.competition ??
+      (m.venue === 'thuis'
+        ? 'Thuiswedstrijd'
+        : m.venue === 'uit'
+          ? 'Uitwedstrijd'
+          : undefined),
+  }))
+
+  let trainingEvents: CalEvent[] = datedTrainings
+    .filter((t) => t.status === 'ja')
+    .map((t) => ({
+      id: t.id,
+      kind: 'training' as const,
+      dateIso: t.dateIso,
+      time: t.time,
+      title: `Training · ${t.day}`,
+      location: t.location,
+      meta: t.focus || t.note,
+    }))
+
+  if (trainingEvents.length === 0 && weeklyTrainings.length > 0 && matches.length > 0) {
+    const sorted = [...matches].sort((a, b) => a.dateIso.localeCompare(b.dateIso))
+    trainingEvents = expandWeeklyTrainings(
+      weeklyTrainings,
+      sorted[0]!.dateIso,
+      sorted[sorted.length - 1]!.dateIso,
+    )
   }
 
   return [...trainingEvents, ...matchEvents].sort((a, b) => {

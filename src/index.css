@@ -1859,3 +1859,956 @@ body {
     animation: none !important;
   }
 }
+
+/* ========== STAFF + TRAINING (ported from U10 C) ========== */
+/* ========== STAFF POPPETJES (milder, sequential) ========== */
+
+.staff-figure .sf-encourage,
+.staff-figure .sf-laugh-mouth,
+.staff-figure .sf-whistle-mouth,
+.staff-figure .sf-cheer-smile,
+.staff-figure .sf-eye-squint,
+.staff-figure .sf-cheek,
+.staff-figure .sf-whistle,
+.staff-figure .sf-whistle-hand,
+.staff-figure .sf-whistle-blow,
+.staff-figure .sf-whistle-sound,
+.staff-figure .sf-clipboard,
+.staff-figure .sf-scarf,
+.staff-figure .sf-cheer-bits {
+  transform-box: view-box;
+}
+
+.staff-figure .sf-encourage { transform-origin: 70px 40px; }
+.staff-figure .sf-laugh-mouth { transform-origin: 70px 68px; }
+.staff-figure .sf-whistle-mouth { transform-origin: 70px 66px; }
+.staff-figure .sf-cheer-smile { transform-origin: 70px 66px; }
+.staff-figure .sf-eye-squint { transform-origin: 70px 50px; }
+.staff-figure .sf-cheek { transform-origin: 70px 58px; }
+.staff-figure .sf-whistle { transform-origin: 99px 101px; }
+.staff-figure .sf-whistle-hand { transform-origin: 104px 94px; }
+.staff-figure .sf-whistle-blow { transform-origin: 78px 66px; }
+.staff-figure .sf-whistle-sound { transform-origin: 96px 56px; }
+.staff-figure .sf-clipboard { transform-origin: 20px 110px; }
+.staff-figure .sf-scarf { transform-origin: 114px 100px; }
+.staff-figure .sf-cheer-bits { transform-origin: 70px 40px; }
+
+/* --- Jonathan: whistle first, then clap (seamless return) --- */
+.player-card[data-move="whistle-clap"]:hover .pf-char,
+.player-card[data-move="whistle-clap"]:focus-within .pf-char,
+.player-card[data-move="whistle-clap"]:active .pf-char {
+  animation: sf-whistleclap-char 2.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+.player-card[data-move="whistle-clap"]:hover .pf-leg-l,
+.player-card[data-move="whistle-clap"]:focus-within .pf-leg-l,
+.player-card[data-move="whistle-clap"]:active .pf-leg-l {
+  animation: sf-whistleclap-leg-l 2.4s ease-in-out infinite;
+}
+.player-card[data-move="whistle-clap"]:hover .pf-leg-r,
+.player-card[data-move="whistle-clap"]:focus-within .pf-leg-r,
+.player-card[data-move="whistle-clap"]:active .pf-leg-r {
+  animation: sf-whistleclap-leg-r 2.4s ease-in-out infinite;
+}
+.player-card[data-move="whistle-clap"]:hover .pf-arm-l,
+.player-card[data-move="whistle-clap"]:focus-within .pf-arm-l,
+.player-card[data-move="whistle-clap"]:active .pf-arm-l {
+  animation: sf-whistleclap-arm-l 2.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+.player-card[data-move="whistle-clap"]:hover .pf-arm-r,
+.player-card[data-move="whistle-clap"]:focus-within .pf-arm-r,
+.player-card[data-move="whistle-clap"]:active .pf-arm-r {
+  animation: sf-whistleclap-arm-r 2.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+.player-card[data-move="whistle-clap"]:hover .pf-head,
+.player-card[data-move="whistle-clap"]:focus-within .pf-head,
+.player-card[data-move="whistle-clap"]:active .pf-head {
+  animation: sf-whistleclap-head 2.4s ease-in-out infinite;
+}
+.player-card[data-move="whistle-clap"]:hover .sf-whistle-mouth,
+.player-card[data-move="whistle-clap"]:focus-within .sf-whistle-mouth,
+.player-card[data-move="whistle-clap"]:active .sf-whistle-mouth {
+  animation: sf-whistleclap-mouth 2.4s ease-in-out infinite;
+}
+.player-card[data-move="whistle-clap"]:hover .sf-smile-idle,
+.player-card[data-move="whistle-clap"]:focus-within .sf-smile-idle,
+.player-card[data-move="whistle-clap"]:active .sf-smile-idle {
+  animation: sf-whistleclap-smile 2.4s ease-in-out infinite;
+}
+.player-card[data-move="whistle-clap"]:hover .sf-cheek,
+.player-card[data-move="whistle-clap"]:focus-within .sf-cheek,
+.player-card[data-move="whistle-clap"]:active .sf-cheek {
+  animation: sf-whistleclap-cheek 2.4s ease-in-out infinite;
+}
+.player-card[data-move="whistle-clap"]:hover .sf-whistle,
+.player-card[data-move="whistle-clap"]:focus-within .sf-whistle,
+.player-card[data-move="whistle-clap"]:active .sf-whistle {
+  animation: sf-whistleclap-whistle-chest 2.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+.player-card[data-move="whistle-clap"]:hover .sf-whistle-hand,
+.player-card[data-move="whistle-clap"]:focus-within .sf-whistle-hand,
+.player-card[data-move="whistle-clap"]:active .sf-whistle-hand {
+  animation: sf-whistleclap-whistle-hand 2.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+.player-card[data-move="whistle-clap"]:hover .sf-whistle-blow,
+.player-card[data-move="whistle-clap"]:focus-within .sf-whistle-blow,
+.player-card[data-move="whistle-clap"]:active .sf-whistle-blow {
+  animation: sf-whistleclap-whistle-blow 2.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+.player-card[data-move="whistle-clap"]:hover .sf-whistle-sound,
+.player-card[data-move="whistle-clap"]:focus-within .sf-whistle-sound,
+.player-card[data-move="whistle-clap"]:active .sf-whistle-sound {
+  animation: sf-whistleclap-sound 2.4s ease-in-out infinite;
+}
+.player-card[data-move="whistle-clap"]:hover .sf-clipboard,
+.player-card[data-move="whistle-clap"]:focus-within .sf-clipboard,
+.player-card[data-move="whistle-clap"]:active .sf-clipboard {
+  animation: sf-clipboard-tilt 2.4s ease-in-out infinite;
+}
+.player-card[data-move="whistle-clap"]:hover .sf-encourage,
+.player-card[data-move="whistle-clap"]:focus-within .sf-encourage,
+.player-card[data-move="whistle-clap"]:active .sf-encourage {
+  animation: sf-whistleclap-encourage 2.4s ease-in-out infinite;
+}
+.player-card[data-move="whistle-clap"]:hover .pf-shadow,
+.player-card[data-move="whistle-clap"]:focus-within .pf-shadow,
+.player-card[data-move="whistle-clap"]:active .pf-shadow {
+  animation: sf-whistleclap-shadow 2.4s ease-in-out infinite;
+}
+.player-card[data-move="whistle-clap"]:hover .pf-glow,
+.player-card[data-move="whistle-clap"]:focus-within .pf-glow,
+.player-card[data-move="whistle-clap"]:active .pf-glow {
+  animation: pf-glow-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes sf-whistleclap-char {
+  /* phase 1 clear to-mouth blow · phase 2 clap bounce · return idle */
+  0%, 100% { transform: translateY(0) scale(1, 1) rotate(0deg); }
+  8% { transform: translateY(1px) scale(1.01, 0.99) rotate(0deg); }
+  18% { transform: translateY(2px) scale(1.025, 0.965) rotate(1deg); } /* lean into blow */
+  30% { transform: translateY(2px) scale(1.02, 0.97) rotate(1deg); }
+  40% { transform: translateY(0) scale(1, 1) rotate(0deg); } /* drop whistle */
+  52% { transform: translateY(-2px) scale(0.99, 1.02); }
+  60% { transform: translateY(1px) scale(1.02, 0.98) rotate(-2deg); }
+  68% { transform: translateY(-3px) scale(1.01, 0.99) rotate(2deg); }
+  76% { transform: translateY(1px) scale(1.02, 0.98) rotate(-1deg); }
+  84% { transform: translateY(-2px) scale(1.01, 0.99) rotate(1deg); }
+  92% { transform: translateY(0) scale(1, 1) rotate(0deg); }
+}
+@keyframes sf-whistleclap-leg-l {
+  0%, 100% { transform: rotate(0deg) translateY(0); }
+  20% { transform: rotate(-3deg) translateY(1px); }
+  60%, 76% { transform: rotate(-3deg) translateY(0); }
+  92% { transform: rotate(0deg) translateY(0); }
+}
+@keyframes sf-whistleclap-leg-r {
+  0%, 100% { transform: rotate(0deg) translateY(0); }
+  20% { transform: rotate(3deg) translateY(1px); }
+  60%, 76% { transform: rotate(3deg) translateY(0); }
+  92% { transform: rotate(0deg) translateY(0); }
+}
+@keyframes sf-whistleclap-arm-l {
+  /* idle → steady during whistle → clap inward → idle */
+  0%, 100% { transform: rotate(0deg); }
+  10%, 38% { transform: rotate(8deg); }
+  48% { transform: rotate(-8deg); }
+  56% { transform: rotate(-42deg); }
+  64% { transform: rotate(-28deg); }
+  72% { transform: rotate(-46deg); }
+  80% { transform: rotate(-30deg); }
+  88% { transform: rotate(-18deg); }
+  94% { transform: rotate(-4deg); }
+}
+@keyframes sf-whistleclap-arm-r {
+  /* right hand lifts hard toward mouth, then claps */
+  0%, 100% { transform: rotate(0deg); }
+  6% { transform: rotate(-28deg); }
+  14% { transform: rotate(-78deg); }
+  18%, 32% { transform: rotate(-96deg); } /* hold at mouth */
+  38% { transform: rotate(-40deg); } /* lower */
+  46% { transform: rotate(6deg); }
+  56% { transform: rotate(42deg); }
+  64% { transform: rotate(28deg); }
+  72% { transform: rotate(46deg); }
+  80% { transform: rotate(30deg); }
+  88% { transform: rotate(14deg); }
+  94% { transform: rotate(4deg); }
+}
+@keyframes sf-whistleclap-head {
+  0%, 100% { transform: rotate(0deg) translateY(0); }
+  14% { transform: rotate(4deg) translateY(1px); } /* lean toward raised hand/whistle */
+  18%, 32% { transform: rotate(5deg) translateY(2px); }
+  40% { transform: rotate(0deg) translateY(0); }
+  56% { transform: rotate(-4deg) translateY(0); }
+  68% { transform: rotate(5deg) translateY(-1px); }
+  80% { transform: rotate(-3deg) translateY(0); }
+  92% { transform: rotate(0deg) translateY(0); }
+}
+@keyframes sf-whistleclap-mouth {
+  0%, 8%, 100% { opacity: 0; transform: scale(0.55); }
+  14% { opacity: 1; transform: scale(0.92); }
+  18%, 32% { opacity: 1; transform: scale(1.12); } /* clear O-mouth */
+  38% { opacity: 0.35; transform: scale(0.8); }
+  44%, 100% { opacity: 0; transform: scale(0.55); }
+}
+@keyframes sf-whistleclap-smile {
+  0%, 8% { opacity: 1; }
+  14%, 36% { opacity: 0; } /* hidden while whistling */
+  44%, 90% { opacity: 1; }
+  100% { opacity: 1; }
+}
+@keyframes sf-whistleclap-cheek {
+  0%, 100% { opacity: 0.45; transform: scale(1); }
+  14% { opacity: 0.75; transform: scale(1.2); }
+  18%, 32% { opacity: 0.95; transform: scale(1.38); } /* strong puff */
+  40% { opacity: 0.55; transform: scale(1.05); }
+  48% { opacity: 0.5; transform: scale(1); }
+  64%, 80% { opacity: 0.7; transform: scale(1.1); }
+}
+@keyframes sf-whistleclap-whistle-chest {
+  /* chest lanyard whistle fades while hand/mouth whistle takes over */
+  0%, 100% { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
+  8% { opacity: 0.55; transform: translate(-4px, -6px) rotate(-8deg) scale(0.92); }
+  14%, 36% { opacity: 0; transform: translate(-10px, -14px) rotate(-16deg) scale(0.7); }
+  44% { opacity: 0.7; transform: translate(0, 0) rotate(0deg) scale(0.95); }
+  52%, 100% { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
+}
+@keyframes sf-whistleclap-whistle-hand {
+  /* appears on the rising right hand, then yields to mouth whistle */
+  0%, 6%, 100% { opacity: 0; transform: translate(0, 0) scale(0.85); }
+  10% { opacity: 1; transform: translate(-2px, -4px) scale(1); }
+  14% { opacity: 1; transform: translate(-6px, -10px) scale(1.05); }
+  18%, 30% { opacity: 0; transform: translate(-8px, -12px) scale(0.9); } /* mouth whistle owns the blow */
+  38%, 100% { opacity: 0; transform: translate(0, 0) scale(0.85); }
+}
+@keyframes sf-whistleclap-whistle-blow {
+  /* unmistakable whistle parked on the lips during the blow */
+  0%, 10%, 100% { opacity: 0; transform: translate(6px, 4px) rotate(8deg) scale(0.6); }
+  14% { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
+  18%, 32% { opacity: 1; transform: translate(0, 0) rotate(-2deg) scale(1.06); }
+  38% { opacity: 0.4; transform: translate(4px, 6px) rotate(6deg) scale(0.8); }
+  44%, 100% { opacity: 0; transform: translate(8px, 8px) rotate(10deg) scale(0.55); }
+}
+@keyframes sf-whistleclap-sound {
+  0%, 12%, 100% { opacity: 0; transform: translate(-4px, 2px) scale(0.7); }
+  16% { opacity: 1; transform: translate(0, 0) scale(1); }
+  22% { opacity: 0.85; transform: translate(2px, -2px) scale(1.08); }
+  28% { opacity: 1; transform: translate(0, -1px) scale(1); }
+  34% { opacity: 0.5; transform: translate(3px, -3px) scale(1.12); }
+  40%, 100% { opacity: 0; transform: translate(4px, -2px) scale(0.75); }
+}
+@keyframes sf-whistleclap-encourage {
+  0%, 48%, 100% { opacity: 0; transform: translateY(4px) scale(0.9); }
+  56%, 86% { opacity: 1; transform: translateY(0) scale(1); }
+  94% { opacity: 0.4; transform: translateY(-2px) scale(1.02); }
+}
+@keyframes sf-whistleclap-shadow {
+  0%, 100% { transform: scaleX(1); opacity: 0.28; }
+  20% { transform: scaleX(1.08); opacity: 0.36; }
+  60%, 76% { transform: scaleX(0.9); opacity: 0.22; }
+  92% { transform: scaleX(1); opacity: 0.28; }
+}
+
+@keyframes sf-clipboard-tilt {
+  0%, 100% { transform: rotate(-4deg); }
+  50% { transform: rotate(6deg); }
+}
+
+/* --- Rafa: big exaggerated laugh (ping-pong smooth) --- */
+.player-card[data-move="laugh"]:hover .pf-char,
+.player-card[data-move="laugh"]:focus-within .pf-char,
+.player-card[data-move="laugh"]:active .pf-char {
+  animation: sf-laugh-char 1.05s ease-in-out infinite;
+}
+.player-card[data-move="laugh"]:hover .pf-arm-l,
+.player-card[data-move="laugh"]:focus-within .pf-arm-l,
+.player-card[data-move="laugh"]:active .pf-arm-l {
+  animation: sf-laugh-arm-l 1.05s ease-in-out infinite;
+}
+.player-card[data-move="laugh"]:hover .pf-arm-r,
+.player-card[data-move="laugh"]:focus-within .pf-arm-r,
+.player-card[data-move="laugh"]:active .pf-arm-r {
+  animation: sf-laugh-arm-r 1.05s ease-in-out infinite;
+}
+.player-card[data-move="laugh"]:hover .pf-body,
+.player-card[data-move="laugh"]:focus-within .pf-body,
+.player-card[data-move="laugh"]:active .pf-body {
+  animation: sf-laugh-body 1.05s ease-in-out infinite;
+}
+.player-card[data-move="laugh"]:hover .pf-head,
+.player-card[data-move="laugh"]:focus-within .pf-head,
+.player-card[data-move="laugh"]:active .pf-head {
+  animation: sf-laugh-head 1.05s ease-in-out infinite;
+}
+.player-card[data-move="laugh"]:hover .sf-smile-idle,
+.player-card[data-move="laugh"]:focus-within .sf-smile-idle,
+.player-card[data-move="laugh"]:active .sf-smile-idle {
+  opacity: 1 !important;
+  animation: sf-laugh-smilepulse 1.05s ease-in-out infinite;
+}
+.player-card[data-move="laugh"]:hover .sf-encourage,
+.player-card[data-move="laugh"]:focus-within .sf-encourage,
+.player-card[data-move="laugh"]:active .sf-encourage {
+  animation: sf-laugh-encourage 1.05s ease-in-out infinite;
+}
+@keyframes sf-laugh-smilepulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+@keyframes sf-laugh-encourage {
+  0%, 100% { opacity: 0.85; transform: translateY(0) scale(1); }
+  50% { opacity: 1; transform: translateY(-3px) scale(1.05); }
+}
+
+.player-card[data-move="laugh"]:hover .sf-eye-open,
+.player-card[data-move="laugh"]:focus-within .sf-eye-open,
+.player-card[data-move="laugh"]:active .sf-eye-open,
+.player-card[data-move="laugh"]:hover .pf-eye-shine,
+.player-card[data-move="laugh"]:focus-within .pf-eye-shine,
+.player-card[data-move="laugh"]:active .pf-eye-shine {
+  opacity: 0 !important;
+}
+.player-card[data-move="laugh"]:hover .sf-eye-squint,
+.player-card[data-move="laugh"]:focus-within .sf-eye-squint,
+.player-card[data-move="laugh"]:active .sf-eye-squint {
+  opacity: 1 !important;
+}
+.player-card[data-move="laugh"]:hover .sf-cheek,
+.player-card[data-move="laugh"]:focus-within .sf-cheek,
+.player-card[data-move="laugh"]:active .sf-cheek {
+  animation: sf-laugh-cheek 1.05s ease-in-out infinite;
+}
+.player-card[data-move="laugh"]:hover .sf-whistle,
+.player-card[data-move="laugh"]:focus-within .sf-whistle,
+.player-card[data-move="laugh"]:active .sf-whistle {
+  animation: sf-whistle-bounce 1.05s ease-in-out infinite;
+}
+.player-card[data-move="laugh"]:hover .sf-clipboard,
+.player-card[data-move="laugh"]:focus-within .sf-clipboard,
+.player-card[data-move="laugh"]:active .sf-clipboard {
+  animation: sf-clipboard-tilt 1.05s ease-in-out infinite;
+}
+.player-card[data-move="laugh"]:hover .pf-shadow,
+.player-card[data-move="laugh"]:focus-within .pf-shadow,
+.player-card[data-move="laugh"]:active .pf-shadow {
+  animation: pf-shadow-active 1.05s ease-in-out infinite;
+}
+.player-card[data-move="laugh"]:hover .pf-glow,
+.player-card[data-move="laugh"]:focus-within .pf-glow,
+.player-card[data-move="laugh"]:active .pf-glow {
+  animation: pf-glow-pulse 1.05s ease-in-out infinite;
+}
+
+@keyframes sf-laugh-char {
+  0%, 100% { transform: translateY(0) scale(1, 1) rotate(0deg); }
+  25% { transform: translateY(-4px) scale(1.02, 0.97) rotate(-2deg); }
+  50% { transform: translateY(2px) scale(1.04, 0.94) rotate(2deg); }
+  75% { transform: translateY(-3px) scale(1.02, 0.97) rotate(-1deg); }
+}
+@keyframes sf-laugh-body {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(0.97); }
+}
+@keyframes sf-laugh-arm-l {
+  0%, 100% { transform: rotate(-18deg); }
+  50% { transform: rotate(-36deg); }
+}
+@keyframes sf-laugh-arm-r {
+  0%, 100% { transform: rotate(16deg); }
+  50% { transform: rotate(34deg); }
+}
+@keyframes sf-laugh-head {
+  0%, 100% { transform: rotate(-3deg) translateY(0); }
+  50% { transform: rotate(5deg) translateY(2px); }
+}
+@keyframes sf-laugh-cheek {
+  0%, 100% { opacity: 0.45; transform: scale(1); }
+  50% { opacity: 0.75; transform: scale(1.18); }
+}
+@keyframes sf-whistle-bounce {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  35% { transform: translateY(-2.5px) rotate(-6deg); }
+  70% { transform: translateY(1px) rotate(4deg); }
+}
+
+/* --- Els: arms-up scarf cheer (smooth bob) --- */
+.player-card[data-move="cheer"]:hover .pf-char,
+.player-card[data-move="cheer"]:focus-within .pf-char,
+.player-card[data-move="cheer"]:active .pf-char {
+  animation: sf-cheer-char 1.5s ease-in-out infinite;
+}
+.player-card[data-move="cheer"]:hover .pf-arm-l,
+.player-card[data-move="cheer"]:focus-within .pf-arm-l,
+.player-card[data-move="cheer"]:active .pf-arm-l {
+  animation: sf-cheer-arm-l 1.5s ease-in-out infinite;
+}
+.player-card[data-move="cheer"]:hover .pf-arm-r,
+.player-card[data-move="cheer"]:focus-within .pf-arm-r,
+.player-card[data-move="cheer"]:active .pf-arm-r {
+  animation: sf-cheer-arm-r 1.5s ease-in-out infinite;
+}
+.player-card[data-move="cheer"]:hover .pf-head,
+.player-card[data-move="cheer"]:focus-within .pf-head,
+.player-card[data-move="cheer"]:active .pf-head {
+  animation: sf-cheer-head 1.5s ease-in-out infinite;
+}
+.player-card[data-move="cheer"]:hover .sf-smile-idle,
+.player-card[data-move="cheer"]:focus-within .sf-smile-idle,
+.player-card[data-move="cheer"]:active .sf-smile-idle {
+  opacity: 0 !important;
+}
+.player-card[data-move="cheer"]:hover .sf-cheer-smile,
+.player-card[data-move="cheer"]:focus-within .sf-cheer-smile,
+.player-card[data-move="cheer"]:active .sf-cheer-smile {
+  opacity: 1 !important;
+}
+.player-card[data-move="cheer"]:hover .sf-cheer-bits,
+.player-card[data-move="cheer"]:focus-within .sf-cheer-bits,
+.player-card[data-move="cheer"]:active .sf-cheer-bits {
+  animation: sf-cheer-bits 1.5s ease-in-out infinite;
+}
+.player-card[data-move="cheer"]:hover .sf-scarf,
+.player-card[data-move="cheer"]:focus-within .sf-scarf,
+.player-card[data-move="cheer"]:active .sf-scarf {
+  animation: sf-scarf-wave 1.5s ease-in-out infinite;
+}
+.player-card[data-move="cheer"]:hover .sf-cheek,
+.player-card[data-move="cheer"]:focus-within .sf-cheek,
+.player-card[data-move="cheer"]:active .sf-cheek {
+  animation: sf-cheer-cheek 1.5s ease-in-out infinite;
+}
+.player-card[data-move="cheer"]:hover .pf-shadow,
+.player-card[data-move="cheer"]:focus-within .pf-shadow,
+.player-card[data-move="cheer"]:active .pf-shadow {
+  animation: pf-shadow-active 1.5s ease-in-out infinite;
+}
+.player-card[data-move="cheer"]:hover .pf-glow,
+.player-card[data-move="cheer"]:focus-within .pf-glow,
+.player-card[data-move="cheer"]:active .pf-glow {
+  animation: pf-glow-pulse 1.5s ease-in-out infinite;
+}
+.player-card[data-move="cheer"]:hover .pf-hair,
+.player-card[data-move="cheer"]:focus-within .pf-hair,
+.player-card[data-move="cheer"]:active .pf-hair {
+  animation: pf-hair-bob 1.5s ease-in-out infinite;
+}
+
+@keyframes sf-cheer-char {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  50% { transform: translateY(-4px) scale(1.02, 0.985); }
+}
+@keyframes sf-cheer-arm-l {
+  0%, 100% { transform: rotate(132deg); }
+  50% { transform: rotate(148deg); }
+}
+@keyframes sf-cheer-arm-r {
+  0%, 100% { transform: rotate(-132deg); }
+  50% { transform: rotate(-150deg); }
+}
+@keyframes sf-cheer-head {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(3deg); }
+}
+@keyframes sf-cheer-bits {
+  0%, 100% { opacity: 0; transform: translateY(6px) scale(0.85); }
+  35% { opacity: 1; transform: translateY(-4px) scale(1.05); }
+  70% { opacity: 0.75; transform: translateY(-10px) scale(1); }
+}
+@keyframes sf-scarf-wave {
+  0%, 100% { transform: rotate(-6deg) translateY(0); }
+  50% { transform: rotate(10deg) translateY(-2px); }
+}
+@keyframes sf-cheer-cheek {
+  0%, 100% { opacity: 0.45; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.12); }
+}
+
+/* ========== NEXT TRAINING FOCUS + COACH WAVE ========== */
+.training-next {
+  position: relative;
+  isolation: isolate;
+  border-color: rgba(243, 128, 25, 0.38);
+  animation:
+    slide-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both,
+    training-next-border 4s ease-in-out infinite;
+}
+
+.training-next__glow {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  overflow: hidden;
+}
+
+/*
+ * Subtle light that swooshes OVER the frame edge only
+ * (masked to the border — not a spinning spot, not a mid-card beam).
+ */
+.training-next__border-swoosh {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    transparent 36%,
+    rgba(243, 128, 25, 0.25) 43%,
+    rgba(255, 180, 90, 0.85) 48%,
+    rgba(255, 255, 245, 1) 50.5%,
+    rgba(255, 180, 90, 0.8) 53%,
+    rgba(243, 128, 25, 0.25) 58%,
+    transparent 66%,
+    transparent 100%
+  );
+  background-size: 240% 100%;
+  background-position: 120% 0;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  /* Clear pass ~every 6.5s */
+  animation: training-next-border-swoosh 6.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.training-next__badge {
+  display: inline-block;
+  animation: training-next-badge 2.8s ease-in-out infinite;
+}
+
+@keyframes training-next-border {
+  0%, 100% {
+    box-shadow:
+      0 0 0 0 rgba(243, 128, 25, 0.04),
+      inset 0 0 0 1px rgba(243, 128, 25, 0.06);
+    border-color: rgba(243, 128, 25, 0.34);
+  }
+  50% {
+    box-shadow:
+      0 0 10px 0 rgba(243, 128, 25, 0.1),
+      inset 0 0 0 1px rgba(243, 128, 25, 0.08);
+    border-color: rgba(243, 128, 25, 0.48);
+  }
+}
+
+@keyframes training-next-border-swoosh {
+  0%, 55% {
+    background-position: 120% 0;
+    opacity: 0;
+  }
+  62% {
+    opacity: 1;
+  }
+  82% {
+    background-position: -25% 0;
+    opacity: 1;
+  }
+  90%, 100% {
+    background-position: -25% 0;
+    opacity: 0;
+  }
+}
+
+@keyframes training-next-badge {
+  0%, 100% { transform: translateY(0); opacity: 0.92; }
+  50% { transform: translateY(-1px); opacity: 1; }
+}
+
+.training-coach-pop__fig {
+  display: block;
+  width: 3.7rem;
+  height: 4.25rem;
+  transform-origin: 50% 100%;
+  will-change: transform, opacity;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.25));
+}
+
+.training-coach-pop__fig.from-left {
+  animation: training-coach-pop-l 2.15s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.training-coach-pop__fig.from-right {
+  animation: training-coach-pop-r 2.15s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes training-coach-pop-l {
+  0% { opacity: 0; transform: translate(-12px, 36%) scale(0.6) rotate(-10deg); }
+  18% { opacity: 1; transform: translate(0, 0) scale(1.05) rotate(-3deg); }
+  40% { transform: translate(2px, -3px) scale(1) rotate(3deg); }
+  65% { opacity: 1; transform: translate(-1px, 0) scale(1.02) rotate(-2deg); }
+  100% { opacity: 0; transform: translate(-6px, 28%) scale(0.75) rotate(-5deg); }
+}
+
+@keyframes training-coach-pop-r {
+  0% { opacity: 0; transform: translate(12px, 36%) scale(0.6) rotate(10deg); }
+  18% { opacity: 1; transform: translate(0, 0) scale(1.05) rotate(3deg); }
+  40% { transform: translate(-2px, -3px) scale(1) rotate(-3deg); }
+  65% { opacity: 1; transform: translate(1px, 0) scale(1.02) rotate(2deg); }
+  100% { opacity: 0; transform: translate(6px, 28%) scale(0.75) rotate(5deg); }
+}
+
+.training-coach-pop__svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.training-coach-pop__svg .pf-glow,
+.training-coach-pop__svg .pf-shadow {
+  display: none;
+}
+
+.training-coach-pop__fig.is-waving .pf-char,
+.training-coach-pop__fig.is-waving .pf-ball,
+.training-coach-pop__fig.is-waving .pf-legs,
+.training-coach-pop__fig.is-waving .pf-head,
+.training-coach-pop__fig.is-waving .pf-arm-l,
+.training-coach-pop__fig.is-waving .pf-arm-r,
+.training-coach-pop__fig.is-waving .sf-whistle,
+.training-coach-pop__fig.is-waving .sf-clipboard {
+  animation: none !important;
+}
+
+.training-coach-pop__fig.is-waving .pf-char {
+  animation: training-wave-bob 0.65s ease-in-out infinite !important;
+  transform-box: fill-box;
+  transform-origin: center bottom;
+}
+
+.training-coach-pop__fig.is-waving .pf-arm-r {
+  animation: training-wave-arm-r 0.48s ease-in-out infinite !important;
+  transform-box: fill-box;
+  transform-origin: 20% 15%;
+}
+
+.training-coach-pop__fig.is-waving .pf-arm-l {
+  animation: training-wave-arm-l 0.52s ease-in-out infinite !important;
+  transform-box: fill-box;
+  transform-origin: 80% 15%;
+}
+
+.training-coach-pop__fig.is-waving .pf-head {
+  animation: training-wave-head 0.7s ease-in-out infinite !important;
+  transform-box: fill-box;
+  transform-origin: center bottom;
+}
+
+@keyframes training-wave-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+@keyframes training-wave-arm-r {
+  0%, 100% { transform: rotate(-8deg) translateY(0); }
+  50% { transform: rotate(-48deg) translateY(-4px); }
+}
+
+@keyframes training-wave-arm-l {
+  0%, 100% { transform: rotate(6deg); }
+  50% { transform: rotate(18deg) translateY(-1px); }
+}
+
+@keyframes training-wave-head {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(4deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .training-next,
+  .training-next__badge,
+  .training-next__border-swoosh,
+  .training-coach-pop__fig.from-left,
+  .training-coach-pop__fig.from-right,
+  .training-coach-pop__fig.is-waving .pf-char,
+  .training-coach-pop__fig.is-waving .pf-arm-r,
+  .training-coach-pop__fig.is-waving .pf-arm-l,
+  .training-coach-pop__fig.is-waving .pf-head {
+    animation: none !important;
+  }
+
+  .training-next {
+    box-shadow: 0 0 12px 0 rgba(243, 128, 25, 0.2);
+    border-color: rgba(243, 128, 25, 0.5);
+  }
+
+  .training-next__border-swoosh {
+    animation: none !important;
+    opacity: 0.45;
+    background-position: 50% 0;
+  }
+
+  .training-coach-pop__fig {
+    opacity: 1;
+  }
+}
+
+/* ========== IDLE BALL EASTER EGG ========== */
+.idle-fun {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  overflow: hidden;
+}
+
+.idle-fun__ball {
+  position: absolute;
+  width: 2.75rem;
+  height: 2.75rem;
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.35));
+  will-change: left, top, transform;
+}
+
+.idle-fun__ball-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.idle-fun__walker {
+  position: absolute;
+  bottom: 3%;
+  width: 5.8rem;
+  height: 8.4rem;
+  transform: translateX(-50%);
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.35));
+  will-change: left, transform;
+  overflow: visible;
+}
+
+.idle-fun__walker-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.idle-fun__walker--peek {
+  animation: idle-peek 1.15s cubic-bezier(0.34, 1.2, 0.64, 1) both;
+}
+.idle-fun__walker--left.idle-fun__walker--peek { left: 0%; }
+.idle-fun__walker--right.idle-fun__walker--peek { left: 100%; }
+
+@keyframes idle-peek {
+  0% { transform: translateX(-50%) translateY(24%); opacity: 0; }
+  40% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  100% { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+
+.idle-fun__walker--left.idle-fun__walker--walk-in {
+  animation: idle-walk-in-l 1.65s cubic-bezier(0.33, 1, 0.4, 1) both;
+}
+.idle-fun__walker--right.idle-fun__walker--walk-in {
+  animation: idle-walk-in-r 1.65s cubic-bezier(0.33, 1, 0.4, 1) both;
+}
+.idle-fun__walker--left.idle-fun__walker--pickup,
+.idle-fun__walker--right.idle-fun__walker--pickup {
+  left: var(--ball-x, 50%);
+  animation: idle-pickup-bob 0.65s ease-in-out both;
+}
+.idle-fun__walker--left.idle-fun__walker--walk-out {
+  left: var(--ball-x, 50%);
+  animation: idle-walk-out-l 1.95s cubic-bezier(0.4, 0, 0.55, 1) both;
+}
+.idle-fun__walker--right.idle-fun__walker--walk-out {
+  left: var(--ball-x, 50%);
+  animation: idle-walk-out-r 1.95s cubic-bezier(0.4, 0, 0.55, 1) both;
+}
+
+@keyframes idle-walk-in-l {
+  0% { left: -14%; opacity: 1; }
+  100% { left: var(--ball-x, 50%); opacity: 1; }
+}
+@keyframes idle-walk-in-r {
+  0% { left: 114%; opacity: 1; }
+  100% { left: var(--ball-x, 50%); opacity: 1; }
+}
+@keyframes idle-pickup-bob {
+  0% { transform: translateX(-50%) translateY(0); }
+  45% { transform: translateX(-50%) translateY(10px) scale(0.97); }
+  100% { transform: translateX(-50%) translateY(0); }
+}
+@keyframes idle-walk-out-l {
+  0% { left: var(--ball-x, 50%); opacity: 1; }
+  100% { left: -16%; opacity: 1; }
+}
+@keyframes idle-walk-out-r {
+  0% { left: var(--ball-x, 50%); opacity: 1; }
+  100% { left: 116%; opacity: 1; }
+}
+
+.idle-fun__walker--walk-in .idle-side-char,
+.idle-fun__walker--walk-out .idle-side-char {
+  animation: idle-walk-char 0.36s ease-in-out infinite;
+}
+.idle-fun__walker--walk-in .idle-side-leg--front,
+.idle-fun__walker--walk-out .idle-side-leg--front {
+  animation: idle-walk-leg-f 0.36s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: top center;
+}
+.idle-fun__walker--walk-in .idle-side-leg--back,
+.idle-fun__walker--walk-out .idle-side-leg--back {
+  animation: idle-walk-leg-b 0.36s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: top center;
+}
+
+@keyframes idle-walk-char {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+@keyframes idle-walk-leg-f {
+  0%, 100% { transform: rotate(8deg); }
+  50% { transform: rotate(-10deg); }
+}
+@keyframes idle-walk-leg-b {
+  0%, 100% { transform: rotate(-8deg); }
+  50% { transform: rotate(10deg); }
+}
+
+.idle-fun__walker .idle-side-head {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+}
+.idle-fun__walker.is-holding .idle-side-head {
+  /* keep */
+}
+
+
+/* Jonathan peeks from the opposite edge on /spelers idle egg */
+.idle-fun__coach {
+  position: absolute;
+  bottom: 2.5%;
+  width: 5.4rem;
+  height: 7.8rem;
+  transform: translateX(-50%);
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.35));
+  overflow: visible;
+  pointer-events: none;
+  animation: idle-coach-peek 0.55s cubic-bezier(0.34, 1.2, 0.64, 1) both;
+}
+.idle-fun__coach--left { left: 6%; }
+.idle-fun__coach--right { left: 94%; }
+.idle-fun__coach-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+@keyframes idle-coach-peek {
+  0% { transform: translateX(-50%) translateY(28%); opacity: 0; }
+  55% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  100% { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+
+/* One-shot whistle pose (reuse Jonathan keyframes, play once) */
+.idle-fun__coach.is-blowing .pf-char {
+  animation: sf-whistleclap-char 1.15s cubic-bezier(0.45, 0.05, 0.55, 0.95) 1 both;
+}
+.idle-fun__coach.is-blowing .pf-arm-l {
+  animation: sf-whistleclap-arm-l 1.15s cubic-bezier(0.45, 0.05, 0.55, 0.95) 1 both;
+}
+.idle-fun__coach.is-blowing .pf-arm-r {
+  animation: sf-whistleclap-arm-r 1.15s cubic-bezier(0.45, 0.05, 0.55, 0.95) 1 both;
+}
+.idle-fun__coach.is-blowing .pf-head {
+  animation: sf-whistleclap-head 1.15s ease-in-out 1 both;
+}
+.idle-fun__coach.is-blowing .sf-whistle-mouth {
+  animation: sf-whistleclap-mouth 1.15s ease-in-out 1 both;
+}
+.idle-fun__coach.is-blowing .sf-smile-idle {
+  animation: sf-whistleclap-smile 1.15s ease-in-out 1 both;
+}
+.idle-fun__coach.is-blowing .sf-whistle {
+  animation: sf-whistleclap-whistle-chest 1.15s cubic-bezier(0.45, 0.05, 0.55, 0.95) 1 both;
+}
+.idle-fun__coach.is-blowing .sf-whistle-hand {
+  animation: sf-whistleclap-whistle-hand 1.15s cubic-bezier(0.45, 0.05, 0.55, 0.95) 1 both;
+}
+.idle-fun__coach.is-blowing .sf-whistle-blow {
+  animation: sf-whistleclap-whistle-blow 1.15s cubic-bezier(0.45, 0.05, 0.55, 0.95) 1 both;
+}
+.idle-fun__coach.is-blowing .sf-whistle-sound {
+  animation: sf-whistleclap-sound 1.15s ease-in-out 1 both;
+}
+.idle-fun__coach.is-blowing .sf-clipboard {
+  animation: sf-clipboard-tilt 1.15s ease-in-out 1 both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .idle-fun { display: none !important; }
+}
+
+/* Roster laugh-along on Spelers cards */
+.player-card.is-laughing .pf-eyes > ellipse:not(.pf-lid) {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scaleY(0.22);
+}
+
+.player-card.is-laughing .pf-eye-shine {
+  opacity: 0;
+}
+
+.player-card.is-laughing .pf-lid {
+  opacity: 0.95;
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scaleY(8);
+}
+
+.player-card.is-laughing .pf-smile {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: translateY(1px) scaleY(1.5) scaleX(1.1);
+  stroke-width: 2.5;
+}
+
+.player-card.is-laughing .pf-head {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: hero-laugh-bob 0.34s ease-in-out infinite !important;
+}
+
+.player-card.is-laughing .pf-char {
+  animation: idle-roster-bounce 0.55s ease-in-out infinite !important;
+  transform-box: fill-box;
+  transform-origin: center bottom;
+}
+
+.player-card.is-laughing .pf-arm-l,
+.player-card.is-laughing .pf-arm-r {
+  animation: idle-roster-arms 0.45s ease-in-out infinite !important;
+  transform-box: fill-box;
+  transform-origin: 50% 10%;
+}
+
+@keyframes idle-roster-bounce {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  50% { transform: translateY(-4px) rotate(2deg); }
+}
+
+@keyframes idle-roster-arms {
+  0%, 100% { transform: rotate(-8deg); }
+  50% { transform: rotate(18deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .idle-fun {
+    display: none !important;
+  }
+
+  .player-card.is-laughing .pf-head,
+  .player-card.is-laughing .pf-char,
+  .player-card.is-laughing .pf-arm-l,
+  .player-card.is-laughing .pf-arm-r {
+    animation: none !important;
+  }
+}

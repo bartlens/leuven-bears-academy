@@ -1,5 +1,6 @@
 import type { AcademyPlayer } from '../data/demoPlayers'
 import { playPlayerClickSound } from '../audio/playerClickSound'
+import { useRosterLaughing } from '../fun/IdleFunContext'
 import { PlayerFigure } from './PlayerFigure'
 
 type PlayerCardProps = {
@@ -14,6 +15,7 @@ const accentRing: Record<AcademyPlayer['accent'], string> = {
 }
 
 export function PlayerCard({ player, index = 0 }: PlayerCardProps) {
+  const laughing = useRosterLaughing()
   const onTap = () => {
     playPlayerClickSound(player)
   }
@@ -22,7 +24,7 @@ export function PlayerCard({ player, index = 0 }: PlayerCardProps) {
     <article
       tabIndex={0}
       data-move={player.move}
-      className={`player-card group card-lift animate-in relative min-w-0 overflow-hidden rounded-3xl border bg-gradient-to-br p-3 touch-manipulation outline-none focus-visible:ring-2 focus-visible:ring-hoop focus-visible:ring-offset-2 focus-visible:ring-offset-ink sm:p-4 ${accentRing[player.accent]}`}
+      className={`player-card group card-lift animate-in relative min-w-0 overflow-hidden rounded-3xl border bg-gradient-to-br p-3 touch-manipulation outline-none focus-visible:ring-2 focus-visible:ring-hoop focus-visible:ring-offset-2 focus-visible:ring-offset-ink sm:p-4 ${accentRing[player.accent]}${laughing ? ' is-laughing' : ''}`}
       style={{ animationDelay: `${index * 0.045}s` }}
       aria-label={`${player.firstName}, rugnummer ${player.number}, ${player.label}`}
       onPointerDown={onTap}
@@ -78,7 +80,7 @@ export function PlayerCard({ player, index = 0 }: PlayerCardProps) {
           {player.firstName}
         </h2>
         <p className="mt-0.5 truncate text-sm font-medium text-muted">
-          {player.moveLabel || player.label}
+          {player.label}
         </p>
       </div>
     </article>

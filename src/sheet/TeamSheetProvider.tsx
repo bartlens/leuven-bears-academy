@@ -24,6 +24,16 @@ import {
   getGeneratedVblMatches,
   mergeVblAndSheetExtras,
 } from '../vbl/fetchTeamMatches'
+import type {
+  DatedTraining,
+  HerfststageInfo,
+  InfoItem,
+  MatchAfspraken,
+  PloegMeta,
+  StaffMember,
+  TeamEventItem,
+  WeeklyTraining,
+} from './beheerTypes'
 import { fetchBeheerLive } from './fetchBeheer'
 
 export type TeamSheetSource = 'live' | 'demo'
@@ -39,10 +49,22 @@ export type TeamSheetData = {
   beheerUrl: string | null
   aanwezigheidUrl: string | null
   fetchedAt: string | null
-  /** Official VBL count before sheet extras. */
   vblMatchCount: number
-  /** Sheet extras (scrimmages) count. */
   sheetExtraCount: number
+  ploeg: PloegMeta
+  staff: StaffMember[]
+  weeklyTrainings: WeeklyTraining[]
+  datedTrainings: DatedTraining[]
+  events: TeamEventItem[]
+  infoItems: InfoItem[]
+  afspraken: MatchAfspraken
+  herfststage: HerfststageInfo
+}
+
+const emptyAfspraken: MatchAfspraken = {
+  title: 'Afspraken wedstrijden',
+  bullets: [],
+  draaischema: { title: 'Draaischema', bullets: [] },
 }
 
 const TeamSheetContext = createContext<TeamSheetData | null>(null)
@@ -64,10 +86,7 @@ function staticFallbackMatches(slug: string): TeamMatch[] {
   )
 }
 
-function demoBundle(team: Team): Omit<
-  TeamSheetData,
-  'loading' | 'error' | 'fetchedAt'
-> {
+function demoBundle(team: Team): Omit<TeamSheetData, 'loading' | 'error' | 'fetchedAt'> {
   const config = getTeamSheetConfig(team.slug)
   const matches = staticFallbackMatches(team.slug)
   return {
@@ -80,6 +99,14 @@ function demoBundle(team: Team): Omit<
     aanwezigheidUrl: config?.aanwezigheidUrl ?? null,
     vblMatchCount: getGeneratedVblMatches(team.slug).length,
     sheetExtraCount: 0,
+    ploeg: {},
+    staff: [],
+    weeklyTrainings: [],
+    datedTrainings: [],
+    events: [],
+    infoItems: [],
+    afspraken: emptyAfspraken,
+    herfststage: null,
   }
 }
 
@@ -129,6 +156,16 @@ export function TeamSheetProvider({
         prev.team.slug === team.slug && prev.nextMatch
           ? prev.nextMatch
           : fallback.nextMatch,
+      staff: prev.team.slug === team.slug ? prev.staff : [],
+      datedTrainings:
+        prev.team.slug === team.slug ? prev.datedTrainings : [],
+      events: prev.team.slug === team.slug ? prev.events : [],
+      infoItems: prev.team.slug === team.slug ? prev.infoItems : [],
+      afspraken: prev.team.slug === team.slug ? prev.afspraken : emptyAfspraken,
+      herfststage: prev.team.slug === team.slug ? prev.herfststage : null,
+      ploeg: prev.team.slug === team.slug ? prev.ploeg : {},
+      weeklyTrainings:
+        prev.team.slug === team.slug ? prev.weeklyTrainings : [],
       source:
         prev.team.slug === team.slug && prev.source === 'live'
           ? 'live'
@@ -136,7 +173,8 @@ export function TeamSheetProvider({
       loading: true,
       error: null,
       fetchedAt: prev.team.slug === team.slug ? prev.fetchedAt : null,
-      vblMatchCount: prev.team.slug === team.slug ? prev.vblMatchCount : fallback.vblMatchCount,
+      vblMatchCount:
+        prev.team.slug === team.slug ? prev.vblMatchCount : fallback.vblMatchCount,
       sheetExtraCount:
         prev.team.slug === team.slug ? prev.sheetExtraCount : 0,
     }))
@@ -176,14 +214,19 @@ export function TeamSheetProvider({
         let aanwezigheidUrl = fallback.aanwezigheidUrl
         let fetchedAt: string | null = null
         let sheetError: string | null =
-          !sheetResult.ok && 'error' in sheetResult
-            ? sheetResult.error
-            : null
+          !sheetResult.ok && 'error' in sheetResult ? sheetResult.error : null
+        let ploeg: PloegMeta = {}
+        let staff: StaffMember[] = []
+        let weeklyTrainings: WeeklyTraining[] = []
+        let datedTrainings: DatedTraining[] = []
+        let events: TeamEventItem[] = []
+        let infoItems: InfoItem[] = []
+        let afspraken: MatchAfspraken = emptyAfspraken
+        let herfststage: HerfststageInfo = null
 
         if (sheetResult.ok) {
           const live = sheetResult.live
           players = live.players.length > 0 ? live.players : fallback.players
-          // Beheer Matchen = extras only (scrimmages / friendlies)
           sheetExtras = live.matches.map((m) => ({
             ...m,
             source: 'sheet' as const,
@@ -191,6 +234,14 @@ export function TeamSheetProvider({
           beheerUrl = live.config.beheerUrl
           aanwezigheidUrl = live.config.aanwezigheidUrl
           fetchedAt = live.fetchedAt
+          ploeg = live.ploeg
+          staff = live.staff
+          weeklyTrainings = live.weeklyTrainings
+          datedTrainings = live.datedTrainings
+          events = live.events
+          infoItems = live.infoItems
+          afspraken = live.afspraken
+          herfststage = live.herfststage
         }
 
         const matches =
@@ -201,7 +252,10 @@ export function TeamSheetProvider({
         const hasLiveContent =
           vblMatches.length > 0 ||
           (sheetResult.ok &&
-            (sheetResult.live.players.length > 0 || sheetExtras.length > 0))
+            (sheetResult.live.players.length > 0 ||
+              sheetExtras.length > 0 ||
+              sheetResult.live.staff.length > 0 ||
+              sheetResult.live.datedTrainings.length > 0))
 
         setState({
           team,
@@ -216,6 +270,14 @@ export function TeamSheetProvider({
           fetchedAt,
           vblMatchCount: vblMatches.length,
           sheetExtraCount: sheetExtras.length,
+          ploeg,
+          staff,
+          weeklyTrainings,
+          datedTrainings,
+          events,
+          infoItems,
+          afspraken,
+          herfststage,
         })
       } catch (err) {
         if (cancelled) return
@@ -248,7 +310,6 @@ export function useTeamSheetData(): TeamSheetData {
   return ctx
 }
 
-/** Safe hook when layout may not wrap (tests / stray pages). */
 export function useTeamSheetDataOptional(): TeamSheetData | null {
   return useContext(TeamSheetContext)
 }

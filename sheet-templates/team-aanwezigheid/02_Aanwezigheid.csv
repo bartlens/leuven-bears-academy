@@ -1,5 +1,4 @@
-sessie_id,datum,type,label,#1 Alfred,#4 Felix,#12 Thomas,notitie_coach
-t-2026-09-14,2026-09-14,training,Training ma Heilig-Hart,J,J,N,
-t-2026-09-17,2026-09-17,training,Training do Redingenhof,J,?,J,
-m-2026-09-27,2026-09-27,match,Uit vs Clem,?,?,?,
-m-2026-10-03,2026-10-03,match,Thuis vs Aarschot,?,?,?,
+sessie_id,datum,type,label,#1 Alfred,#2 Ilya,#3 Elias,#4 Felix,#5 Sam,#6 Bas D,#7 Jarne,#8 Charlie,#9 Jia Le,#10 Bas N,#11 Jacob,#12 Thomas,notitie_coach
+t-2026-09-14,2026-09-14,training,Training ma Heilig-Hart,J,J,J,J,J,?,?,?,?,?,?,,"Voorbeeld — vervang door echte antwoorden"
+t-2026-09-17,2026-09-17,training,Training do Redingenhof,?,?,?,?,?,?,?,?,?,?,?,?,
+m-2026-09-27,2026-09-27,match,Uit vs Clem,?,?,?,?,?,?,?,?,?,?,?,?,

@@ -1,5 +1,26 @@
-type,titel,tekst,volgorde
-afspraak,Aanwezigheid,Duid aan- of afwezigheid tijdig aan in de aanwezigheidslijst.,1
-afspraak,Fair play,We spelen fair en juichen hard. #WEBEARS,2
-link,Tickets A-ploeg,https://leuvenbears.ordering.be/o/2,3
-link,Clubsite,https://www.leuvenbears.be/,4
+soort,titel,tekst,link,volgorde
+afspraak,Afspraken wedstrijden,45 min voor aanvang van de wedstrijd in de sporthal,,1
+afspraak,Afspraken wedstrijden,30 min voor aanvang van de wedstrijd aangekleed in de kleedkamer,,2
+afspraak,Afspraken wedstrijden,Probeer 2 van de 3 wedstrijden aanwezig te zijn,,3
+afspraak,Afspraken wedstrijden,Eén ouder doet de tafel; één iemand nodig als délegué,,4
+afspraak,Afspraken wedstrijden,Beurtrol: elke keer iemand anders wast de truitjes,,5
+afspraak,Afspraken wedstrijden,"Indien nodig in Redingenhof helpen met de zaal opruimen (tafels, banken, chrono, …)",,6
+draai,Draaischema,"Iedere wedstrijd spelen max. 8 spelers (speeltijd vs. verplaatsing maximaliseren)",,1
+draai,Draaischema,"Volgorde: Beschikbaarheid → aanwezigheid op beide trainingen → aanwezigheid op donderdag → draaischema",,2
+tip,Tips voor ouders,"Zorg voor naamlabels in jas & drinkbus — de kleedkamer is een jungle.",,1
+tip,Tips voor ouders,"Kom op tijd: 10 min vroeger = rustig aankleden + high-five met de coach.",,2
+tip,Tips voor ouders,"Na de match: eerst water, dan snack. Suikerstorms later 😄",,3
+tip,Tips voor ouders,"Carpoolen? Vragen via coaches of Els (ploegafgevaardigde).",,4
+tip,Tips voor ouders,"Juichen mag luid — schelden niet. We zijn jeugdbasket, geen Champions League.",,5
+tip,Tips voor ouders,"Vragen over inschrijving of lidgeld? Mail het clubsecretariaat.",,6
+link,leuvenbears.be,Clubwebsite,https://www.leuvenbears.be,1
+link,Tickets A-team,Tickets bestellen,https://www.leuvenbears.be/tickets,2
+link,Kalender synchroniseren (VBL),Importeer de officiële wedstrijdkalender in je agenda,https://vblcal.wisseq.eu/vblcalsync/calsync.aspx?guid=BVBL1125G10003,3
+link,Aanwezigheid spreadsheet,Aan- of afwezigheid aanduiden,https://docs.google.com/spreadsheets/d/1nL3LnDroXfrfj4oq4a12edCDV-ZVAtjLO2_XyxMo-1w/edit,4
+stage,U10 Stage / herfststage,Interne herfststage,,1
+stage,Tarief,€75,,2
+stage,Rekening (IBAN),BE67 7340 0901 9187,,3
+stage,Mededeling,"Interne stage + periode (herfststage)+ naam deelnemer",,4
+stage,Formulier,Inschrijfformulier herfststage,https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=znK2Kzx9dEO0tWcmk-9sCPjI05p7wQlJvN8cjmgsnylUMUlCSEJIU1hQSU9YVE9ES0hUQ1dFVTRQMi4u,5
+stage,Nota,Pas na ontvangst van de overschrijving is de inschrijving definitief.,,6
+stage,Nota,Voor andere stages volgt later een aparte betaaluitnodiging.,,7

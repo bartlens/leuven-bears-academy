@@ -6,7 +6,7 @@ import { club } from '../../data/club'
 import { useTeamSheetData } from '../../sheet/TeamSheetProvider'
 import {
   brusselsTodayIso,
-  buildTeamCalendarEvents,
+  buildTeamCalendarEventsFromSheet,
   monthGrid,
   monthLabel,
   type CalEvent,
@@ -28,8 +28,16 @@ function formatDayHeading(iso: string) {
 
 export function TeamKalender() {
   const { team } = useOutletContext<TeamOutletContext>()
-  const { matches } = useTeamSheetData()
-  const trainings = team.trainings ?? []
+  const { matches, datedTrainings, weeklyTrainings, ploeg } = useTeamSheetData()
+  const fromWeek = weeklyTrainings
+    .filter((w) => w.active)
+    .map((w) => ({
+      day: w.day,
+      time: w.start && w.end ? `${w.start}–${w.end}` : w.start,
+      location: w.location,
+    }))
+  const trainings = fromWeek.length > 0 ? fromWeek : (team.trainings ?? [])
+  const season = ploeg.season ?? club.season
   const todayIso = brusselsTodayIso()
   const [y, m] = todayIso.split('-').map(Number)
   const [cursor, setCursor] = useState({ year: y!, month: m! - 1 })
@@ -37,8 +45,13 @@ export function TeamKalender() {
   const base = `/team/${team.slug}`
 
   const events = useMemo(
-    () => buildTeamCalendarEvents(matches, trainings),
-    [matches, trainings],
+    () =>
+      buildTeamCalendarEventsFromSheet(
+        matches,
+        datedTrainings,
+        trainings,
+      ),
+    [matches, datedTrainings, trainings],
   )
 
   const byDate = useMemo(() => {
@@ -80,7 +93,7 @@ export function TeamKalender() {
       <SectionHeader
         eyebrow="Overzicht"
         title="Kalender"
-        subtitle={`Matchen${trainings.length ? ' en trainingen' : ''} van ${team.name} · seizoen ${club.season}.`}
+        subtitle={`Alle trainingen en matchen van seizoen ${season} op één plek.`}
       />
 
       {events.length === 0 && (

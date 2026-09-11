@@ -55,13 +55,18 @@ export function parseMatchenCsv(
       continue
     }
 
-    const time = normalizeTime(row.uur ?? '')
-    const venue = parseVenue(row.thuis_uit ?? '')
+    const time = normalizeTime(row.uur ?? row.tijd ?? '')
+    const venue = parseVenue(row.thuis_of_uit ?? row.thuis_uit ?? '')
     const location = (row.locatie ?? '').trim()
     const address = (row.adres ?? '').trim() || undefined
     const competition = (row.competitie ?? '').trim() || undefined
-    const scoreWij = (row.score_wij ?? '').trim()
-    const scoreZij = (row.score_zij ?? '').trim()
+    // Skip clear example rows unless explicitly kept
+    const note = (row.notitie ?? '').trim().toLowerCase()
+    if (opponent.toUpperCase().startsWith('VOORBEELD') || note.includes('voorbeeld-rij')) {
+      continue
+    }
+    const scoreWij = (row.score_ons ?? row.score_wij ?? '').trim()
+    const scoreZij = (row.score_tegenstander ?? row.score_zij ?? '').trim()
     const score =
       scoreWij && scoreZij ? `${scoreWij}-${scoreZij}` : undefined
     const status =

@@ -102,6 +102,14 @@ function makePlayer(opts: {
   const accent = (['orange', 'bear', 'warm'].includes(appearance.accent)
     ? appearance.accent
     : 'orange') as AcademyPlayer['accent']
+  const look = lookFromSheet(appearance)
+  if (/jia\s*le/i.test(opts.firstName)) {
+    look.eyeStyle = 'soft'
+    look.cheek = '#e8a090'
+    look.hair = '#1a1a1a'
+    look.skin = '#e8c4a0'
+    look.hairStyle = 'short'
+  }
   return {
     id: opts.id,
     firstName: opts.firstName,
@@ -113,7 +121,7 @@ function makePlayer(opts: {
     accent,
     move: appearance.move as PlayerMove,
     moveLabel: appearance.moveLabel,
-    look: lookFromSheet(appearance),
+    look,
   }
 }
 

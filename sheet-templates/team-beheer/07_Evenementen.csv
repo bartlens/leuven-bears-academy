@@ -1,2 +1,8 @@
-slug,titel,start_datum,start_uur,eind_datum,eind_uur,locatie,beschrijving,zichtbaar
-herfststage,U10 herfststage,2026-11-02,09:00,2026-11-03,16:00,Redingenhof,Interne stage,ja
+slug,titel,start_datum,start_uur,eind_datum,eind_uur,locatie,beschrijving,emoji,zichtbaar
+herfststage,U10 Stage / herfststage,2026-11-02,09:00,2026-11-03,16:00,Redingenhof,Interne stage — details (tarief/IBAN) staan in tab Info,🏕️,ja
+tornooi-zuiderkempen,Tornooi Zuiderkempen,2026-08-31,,,,"Zuiderkempen",Tornooi 1 — zaterdag 31/08,🏀,ja
+tornooi-noh,Tornooi Neder-Over-Heembeek,2026-12-08,,,,"Complexe sportif de Neder-Over-Heembeek, Rue de Lombartzyde 120, 1120 Bruxelles",Tornooi 2 — zondag 8/12,🏆,ja
+tornooi-haacht,Tornooi Haacht,2026-12-21,Namiddag,,,Haacht,Tornooi 3 — zaterdag 21/12 namiddag,🏀,ja
+tornooi-lubbeek,Tornooi Lubbeek,2027-04-19,12:45,2027-04-19,19:20,Lubbeek,Tornooi 4 — zaterdag 19/04 namiddag,🏆,ja
+tornooi-profondeville,Tornooi Profondeville,2027-05-17,09:15,2027-05-17,18:30,"Avenue Roquebrune Cap Martin 27/43, 5170 Profondeville",Tornooi 5 — zaterdag 17/05,🏀,ja
+tornooi-temse,Tornooi Temse,2027-05-30,Voormiddag,,,"Gasthuisstraat 78A, Temse",Tornooi 6 — vrijdag 30/05 voormiddag,🏆,ja

@@ -1,3 +1,4 @@
-naam,rol,email,telefoon,zichtbaar,volgorde
-Jonathan,Coach,,,ja,1
-Els,Ploegafgevaardigde,,,ja,2
+naam,rol,email,telefoon,tonen,volgorde,emoji,outfit,actie,actie_label,haarstijl,haarkleur,huidskleur,nota
+Jonathan Degros,Coach,,,ja,1,📢,coach,whistle-clap,Fluit & klap,short,bruin,perzik,
+Rafa Gálvez Vizcaíno,Coach,,,ja,2,😂,coach,laugh,Lachen!,side,zwart,olijf,
+Els,Ploegafgevaardigde,,,ja,3,🙌,vrijwilliger,cheer,Supporter,long,kastanje,abrikoos,mama van Sam

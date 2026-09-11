@@ -87,6 +87,10 @@ export function csvToObjects(text: string): Record<string, string>[] {
       cells.includes('nummer') ||
       cells.includes('voornaam') ||
       cells.includes('veld') ||
+      cells.includes('naam') ||
+      cells.includes('soort') ||
+      cells.includes('titel') ||
+      cells.includes('dag') ||
       (cells.length >= 3 && !joined.includes(' automatisch '))
     ) {
       headerIdx = i

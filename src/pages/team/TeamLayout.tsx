@@ -1,6 +1,9 @@
 import { Link, Outlet, useParams } from 'react-router-dom'
+import { AudioUnlock } from '../../components/AudioUnlock'
+import { IdleBallEasterEgg } from '../../components/IdleBallEasterEgg'
 import { SectionHeader } from '../../components/SectionHeader'
 import { getTeamBySlug, type Team } from '../../data/teams'
+import { IdleFunProvider } from '../../fun/IdleFunContext'
 import { TeamSheetProvider } from '../../sheet/TeamSheetProvider'
 
 export type TeamOutletContext = {
@@ -25,7 +28,11 @@ export function TeamLayout() {
 
   return (
     <TeamSheetProvider team={team}>
-      <Outlet context={{ team } satisfies TeamOutletContext} />
+      <IdleFunProvider>
+        <AudioUnlock />
+        <Outlet context={{ team } satisfies TeamOutletContext} />
+        <IdleBallEasterEgg />
+      </IdleFunProvider>
     </TeamSheetProvider>
   )
 }

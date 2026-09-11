@@ -70,14 +70,16 @@ move,shoulder-roll,Schouder-roll
 move,layup,Lay-up
 move,behind-head,No-look
 move,spin-move,Spin-move
-thuis_uit,thuis,Thuis
-thuis_uit,uit,Uit
+thuis_of_uit,thuis,Thuis
+thuis_of_uit,uit,Uit
 status_match,upcoming,Gepland
 status_match,played,Gespeeld
 status_training,ja,Doorgaan
 status_training,nee,Geannuleerd / geen training
-zichtbaar,ja,Ja
-zichtbaar,nee,Nee
+tonen,ja,Ja — tonen op de site
+tonen,nee,Nee — verbergen
+actief,ja,Ja — deze dag trainen we
+actief,nee,Nee — geen training
 dag,maandag,Maandag
 dag,dinsdag,Dinsdag
 dag,woensdag,Woensdag
@@ -101,3 +103,15 @@ emoji,🏆,Trofee
 emoji,🔥,Vuur
 emoji,🚀,Raket
 emoji,😄,Lachen
+emoji,📢,Fluit
+emoji,😂,Lachen hard
+outfit,coach,Coach
+outfit,vrijwilliger,Vrijwilliger / ouder
+actie,whistle-clap,Fluit & klap
+actie,laugh,Lachen
+actie,cheer,Juichen / supporter
+info_soort,afspraak,Wedstrijd-afspraak
+info_soort,draai,Draaischema / beurtrol
+info_soort,tip,Tip voor ouders
+info_soort,link,Handige link
+info_soort,stage,Stage / herfststage-veld

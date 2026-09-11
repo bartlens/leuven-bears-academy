@@ -69,7 +69,9 @@ export function Footer() {
           {club.contact.vat}
         </p>
         <p className="text-xs text-muted/70">
-          © Blits BV — redesign demo (lokaal)
+          {teamSlugMatch?.[1] === 'u10-c'
+            ? '© Blits BV (Bart, papa van Thomas)'
+            : '© Blits BV — Leuven Bears Academy'}
         </p>
       </div>
     </footer>

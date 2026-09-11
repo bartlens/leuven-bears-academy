@@ -1,3 +1,2 @@
-_uitleg,"Officiële competitiewedstrijden komen AUTOMATISCH van Basketbal Vlaanderen (VBL) — die hoef je hier NIET in te typen. Gebruik deze tab alleen voor niet-officiële oefenwedstrijden, scrimmages of toernooien."
-datum,uur,tegenstander,thuis_uit,locatie,adres,competitie,score_wij,score_zij,status,notitie
-2026-10-18,10:00,Oefenwedstrijd vs. dorpsploeg,thuis,Campus Redingenhof,"Remi Vandervaerenlaan, 3000 Leuven",Scrimmage / extras,,,upcoming,Voorbeeld-extra (geen VBL)
+datum,uur,tegenstander,thuis_of_uit,locatie,adres,competitie,score_ons,score_tegenstander,status,notitie
+2026-10-18,10:00,VOORBEELD — Oefenwedstrijd vs. dorpsploeg,thuis,Campus Redingenhof,"Remi Vandervaerenlaan, 3000 Leuven",Scrimmage / extras,,,upcoming,Dit is een VOORBEELD-rij. Wis of pas aan. Geen VBL-competitie hier.

@@ -1,8 +1,8 @@
 veld,waarde
-doel,Ouders/spelers/coaches duiden aan of iemand komt op training of match
-wie_mag_bewerken,Iedereen met de link (of expliciet uitgenodigd)
-sync_spelers,"Spelers komen AUTOMATISCH uit de Beheer-sheet (tab Spelers). Voeg spelers dus ALLEEN toe in Beheer — niet hier."
-sync_hoe,"1) Zet beheer_sheet_id hieronder. 2) Open Extensies → Apps Script → plak syncSpelers.gs → voer syncSpelersFromBeheer eenmaal uit + trigger. Of gebruik de formules op Spelers_ref."
-beheer_sheet_id,BEHEER_SHEET_ID
-beheer_sheet_url,https://docs.google.com/spreadsheets/d/BEHEER_SHEET_ID/edit
-tips,"Zet J / N / ? of ✅ / ❌ / ❓. Leeg = nog niet ingevuld. Wijzig alleen de cel van jouw kind."
+doel,"Ouders duiden aan of hun kind komt op training of match. Simpel houden!"
+wie_mag_bewerken,"Iedereen met de link (oudergroep / WhatsApp)."
+sync_spelers,"Spelers komen AUTOMATISCH uit Beheer → tab Spelers. Voeg spelers dus ALLEEN toe in Beheer."
+sync_hoe,"1) Plak hieronder het beheer_sheet_id. 2) Extensies → Apps Script → syncSpelersFromBeheer.gs eenmaal draaien."
+beheer_sheet_id,1Z9yOU8F7zR8Rr3jtdJ8Y_tH28DquUIZDbV8-WGIa62s
+beheer_sheet_url,https://docs.google.com/spreadsheets/d/1Z9yOU8F7zR8Rr3jtdJ8Y_tH28DquUIZDbV8-WGIa62s/edit
+tips,"Zet J / N / ? of ✅ / ❌ / ❓. Leeg = nog niet ingevuld. Alleen jouw kind aanpassen."

@@ -1,0 +1,7 @@
+stap,uitleg
+1,"Dit is de AANWEZIGHEID-map. Ouders vullen hier alleen aan of hun kind komt."
+2,"Spelers toevoegen doe je NIET hier — dat gebeurt in de Beheer-map (tab Spelers)."
+3,"Vul in de matrix J (ja), N (nee) of ? (weet nog niet). Leeg = nog niet ingevuld."
+4,"Wijzig alleen de cel van jouw kind. Andere cellen met rust laten."
+5,"Sessies (trainingen/matchen) komen idealiter uit Beheer. Vraag de coach als een sessie ontbreekt."
+6,"Zet in Uitleg het beheer_sheet_id zodat sync kan werken (Apps Script)."

@@ -1,5 +1,4 @@
 waarde,label_nl,betekenis
-J,Ja / ✅,Aanwezig
-N,Nee / ❌,Afwezig
-?,Nog onzeker / ❓,Twijfel
-,Leeg,Nog niet ingevuld
+J,Ja,Kind is erbij
+N,Nee,Kind is afwezig
+?,Nog niet zeker,We weten het nog niet
