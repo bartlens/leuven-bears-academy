@@ -8,12 +8,26 @@ import { resolvePlayerAppearance } from '../lib/playerAppearance'
 import { csvToObjects } from './csv'
 
 
-function lookFromAppearance(appearance: ReturnType<typeof resolvePlayerAppearance>) {
-  return {
+function lookFromAppearance(
+  appearance: ReturnType<typeof resolvePlayerAppearance>,
+  firstName: string,
+) {
+  const look: {
+    hair: string
+    skin: string
+    hairStyle: HairStyle
+    eyeStyle?: 'soft'
+    cheek?: string
+  } = {
     hair: appearance.hair,
     skin: appearance.skin,
     hairStyle: appearance.hairStyle as HairStyle,
   }
+  if (/jia\s*le/i.test(firstName)) {
+    look.eyeStyle = 'soft'
+    look.cheek = '#e8a090'
+  }
+  return look
 }
 
 /** Parse Beheer tab Spelers CSV → AcademyPlayer[]. */
@@ -58,7 +72,7 @@ export function parseSpelersCsv(
       accent,
       move: appearance.move as PlayerMove,
       moveLabel: appearance.moveLabel,
-      look: lookFromAppearance(appearance),
+      look: lookFromAppearance(appearance, firstName),
     })
   }
 
