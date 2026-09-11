@@ -26,7 +26,13 @@ function normalizeTime(raw: string): string {
   return `${String(Number(m[1])).padStart(2, '0')}:${m[2]}`
 }
 
-/** Parse Beheer tab Matchen CSV → TeamMatch[]. */
+/**
+ * Parse Beheer tab Matchen CSV → TeamMatch[].
+ *
+ * IMPORTANT: this tab is for EXTRAS only (scrimmages, friendlies, toernooien).
+ * Official Basketbal Vlaanderen competition games come from the VBL API
+ * (`src/vbl/fetchTeamMatches.ts`) and must not be re-typed here.
+ */
 export function parseMatchenCsv(
   csvText: string,
   teamSlug: string,
@@ -40,8 +46,12 @@ export function parseMatchenCsv(
     const opponent = (row.tegenstander ?? '').trim()
     if (!dateIso || !opponent) continue
 
-    const status = (row.status ?? '').trim().toLowerCase()
-    if (status === 'geannuleerd' || status === 'cancelled' || status === 'afgelast') {
+    const statusRaw = (row.status ?? '').trim().toLowerCase()
+    if (
+      statusRaw === 'geannuleerd' ||
+      statusRaw === 'cancelled' ||
+      statusRaw === 'afgelast'
+    ) {
       continue
     }
 
@@ -50,10 +60,19 @@ export function parseMatchenCsv(
     const location = (row.locatie ?? '').trim()
     const address = (row.adres ?? '').trim() || undefined
     const competition = (row.competitie ?? '').trim() || undefined
+    const scoreWij = (row.score_wij ?? '').trim()
+    const scoreZij = (row.score_zij ?? '').trim()
+    const score =
+      scoreWij && scoreZij ? `${scoreWij}-${scoreZij}` : undefined
+    const status =
+      statusRaw === 'played' || statusRaw === 'gespeeld'
+        ? ('played' as const)
+        : ('upcoming' as const)
+
     idx += 1
     const timeKey = time.replace(':', '')
     matches.push({
-      id: `${teamSlug}-${dateIso}-${timeKey}-${idx}`,
+      id: `${teamSlug}-extra-${dateIso}-${timeKey}-${idx}`,
       dateIso,
       time,
       opponent,
@@ -61,6 +80,9 @@ export function parseMatchenCsv(
       location,
       address,
       competition,
+      score,
+      status,
+      source: 'sheet',
     })
   }
 

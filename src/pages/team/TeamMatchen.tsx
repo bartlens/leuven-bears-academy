@@ -2,6 +2,7 @@ import { useOutletContext } from 'react-router-dom'
 import type { TeamOutletContext } from './TeamLayout'
 import { SectionHeader } from '../../components/SectionHeader'
 import { club } from '../../data/club'
+import { hasVblTeam } from '../../data/vblTeams'
 import { brusselsTodayIso } from '../../lib/calendarEvents'
 import { useTeamSheetData } from '../../sheet/TeamSheetProvider'
 
@@ -15,28 +16,50 @@ function formatDate(iso: string) {
 
 export function TeamMatchen() {
   const { team } = useOutletContext<TeamOutletContext>()
-  const { matches: sheetMatches, source, loading } = useTeamSheetData()
+  const {
+    matches: sheetMatches,
+    source,
+    loading,
+    vblMatchCount,
+    sheetExtraCount,
+  } = useTeamSheetData()
   const today = brusselsTodayIso()
   const matches = [...sheetMatches].sort(
     (a, b) => a.dateIso.localeCompare(b.dateIso) || a.time.localeCompare(b.time),
   )
-  const upcoming = matches.filter((m) => m.dateIso >= today)
-  const past = matches.filter((m) => m.dateIso < today)
+  const upcoming = matches.filter(
+    (m) => m.dateIso >= today && m.status !== 'played',
+  )
+  const past = matches.filter(
+    (m) => m.dateIso < today || m.status === 'played',
+  )
+  const usesVbl = hasVblTeam(team.slug)
+
+  const subtitle = usesVbl
+    ? `Officiële wedstrijden via Basketbal Vlaanderen${
+        sheetExtraCount > 0 ? ` · +${sheetExtraCount} extras uit Beheer` : ''
+      } · seizoen ${club.season}.`
+    : source === 'live'
+      ? `Opkomende wedstrijden voor ${team.name} · seizoen ${club.season} · live uit Beheer.`
+      : `Opkomende wedstrijden voor ${team.name} · seizoen ${club.season}.`
 
   return (
     <div className="mx-auto max-w-6xl overflow-x-hidden px-4 py-10 sm:px-6">
-      <SectionHeader
-        eyebrow="Game day"
-        title="Matchen"
-        subtitle={
-          source === 'live'
-            ? `Opkomende wedstrijden voor ${team.name} · seizoen ${club.season} · live uit Beheer.`
-            : `Opkomende wedstrijden voor ${team.name} · seizoen ${club.season}. Scores worden niet verzonnen — we tonen alleen wat bekend is.`
-        }
-      />
+      <SectionHeader eyebrow="Game day" title="Matchen" subtitle={subtitle} />
 
       {loading && (
-        <p className="mb-4 text-sm text-muted">Matchen laden uit Beheer…</p>
+        <p className="mb-4 text-sm text-muted">
+          {usesVbl ? 'Matchen laden (VBL + Beheer extras)…' : 'Matchen laden uit Beheer…'}
+        </p>
+      )}
+
+      {usesVbl && !loading && (
+        <p className="mb-6 text-xs text-muted">
+          {vblMatchCount} officiële VBL-wedstrijden
+          {sheetExtraCount > 0
+            ? ` · ${sheetExtraCount} sheet-extra${sheetExtraCount === 1 ? '' : 's'}`
+            : ' · Beheer Matchen = alleen oefenwedstrijden / extras'}
+        </p>
       )}
 
       <section className="mb-12">
@@ -68,6 +91,11 @@ export function TeamMatchen() {
                     >
                       {m.venue === 'thuis' ? 'Thuis' : m.venue === 'uit' ? 'Uit' : '?'}
                     </span>
+                    {m.source === 'sheet' && (
+                      <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-muted">
+                        Extra
+                      </span>
+                    )}
                     <span className="text-sm text-muted">
                       {formatDate(m.dateIso)} · {m.time}
                     </span>
@@ -95,11 +123,8 @@ export function TeamMatchen() {
       {past.length > 0 && (
         <section>
           <h2 className="mb-4 font-display text-xl font-bold text-cream">
-            Eerdere data ({past.length})
+            Gespeeld / eerdere data ({past.length})
           </h2>
-          <p className="mb-3 text-sm text-muted">
-            Geen scores beschikbaar — we tonen enkel de geplande data van de bron.
-          </p>
           <div className="space-y-3">
             {past.map((m) => (
               <article
@@ -110,12 +135,25 @@ export function TeamMatchen() {
                   <span className="text-sm text-muted">
                     {formatDate(m.dateIso)} · {m.time} ·{' '}
                     {m.venue === 'thuis' ? 'Thuis' : m.venue === 'uit' ? 'Uit' : '?'}
+                    {m.source === 'sheet' ? ' · Extra' : ''}
                   </span>
                   <h3 className="mt-1 font-display text-lg font-bold text-cream">
                     vs {m.opponent}
                   </h3>
                   <p className="text-sm text-muted">{m.location}</p>
+                  {m.competition && (
+                    <p className="mt-1 text-xs font-semibold text-warm">{m.competition}</p>
+                  )}
                 </div>
+                {m.score ? (
+                  <span className="self-start rounded-xl border border-hoop/30 bg-hoop/15 px-4 py-2 font-display text-lg font-bold text-hoop-bright sm:self-center">
+                    {m.score}
+                  </span>
+                ) : (
+                  <span className="self-start rounded-xl border border-dashed border-white/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted sm:self-center">
+                    Geen score
+                  </span>
+                )}
               </article>
             ))}
           </div>

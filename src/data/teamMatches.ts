@@ -1,5 +1,9 @@
 export type TeamMatchVenue = 'thuis' | 'uit' | 'unknown'
 
+export type TeamMatchStatus = 'upcoming' | 'played'
+
+export type TeamMatchSource = 'vbl' | 'sheet' | 'static'
+
 export type TeamMatch = {
   id: string
   dateIso: string
@@ -10,6 +14,11 @@ export type TeamMatch = {
   address?: string
   competition?: string
   dateLabel?: string
+  /** Raw score string from VBL uitslag, e.g. "62-55". */
+  score?: string
+  status?: TeamMatchStatus
+  /** Where this row came from (official VBL vs sheet extras vs static demo). */
+  source?: TeamMatchSource
 }
 
 export const teamMatches: Record<string, TeamMatch[]> = {
