@@ -1,3 +1,3 @@
 Dit tabblad Sessies is een gegenereerde index (coach-facing; mag verborgen).
 In de live Aanwezigheid-map: niet manueel onderhouden — menu Academy sync → Alles bijwerken schrijft Sessies + tabs Trainingen/Wedstrijden vanuit Beheer (Trainingen_week + Trainingen_data + Matchen).
-Ouders werken in Trainingen en Wedstrijden (1 rij per kind, kolommen = sessies).
+Ouders werken in Trainingen en Wedstrijden (1 rij per kind, kolommen = sessies; Trainingen = Ja/Nee groen/rood).

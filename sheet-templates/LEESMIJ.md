@@ -25,7 +25,7 @@ Doel: **jij vult Beheer in**, ouders vullen alleen **Aanwezigheid** (tabs Traini
 Nummer + voornaam volstaat. Dropdowns (look/emoji) staan klaar; `random` = de site kiest.
 
 ### Trainingen + Matchen — tip (aanwezigheid)
-- **Trainingen:** vul `Trainingen_week`. Sync maakt sessies voor ouders (10 weken vooruit). Uitzondering? Zet die dag in `Trainingen_data` (`status=nee` = afgelast, of ander uur/zaal).  
+- **Trainingen:** vul `Trainingen_week`. Sync maakt sessies voor ouders (10 weken vooruit). Uitzondering? Zet die dag in `Trainingen_data` (`status=nee` = afgelast, of ander uur/zaal). Layout = Training 1/2… + datum + **Ja/Nee** (groen/rood), zoals het oude U10 C-blad.  
 - **Wedstrijden waarvoor je aanwezigheid wil:** zet ze in Beheer → **Matchen** (ook als het een VBL-wedstrijd is, mag een korte rij). Daarna sync.  
 - Officiële VBL-kalender op de site ≠ automatisch aanwezigheidsrij. Wil je J/N/? voor een VBL-match → korte rij in Matchen + sync.
 
@@ -34,7 +34,7 @@ Nummer + voornaam volstaat. Dropdowns (look/emoji) staan klaar; `random` = de si
 Layout zoals het oude U10 C-blad: **één rij per kind**, kolommen = trainingen/matchen.
 
 1. Tab **Lees_mij** / **Uitleg**: plak `beheer_sheet_id`.  
-2. Tab **Trainingen**: vinkje bij jouw kind = komt op training (groen/rood).  
+2. Tab **Trainingen**: kies **Ja** of **Nee** bij jouw kind (groen/rood; leeg = grijs).  
 3. Tab **Wedstrijden**: per match **Kan aanwezig zijn** (ouders) + **Heeft gespeeld** (coach na de match).  
 4. Spelers **niet** hier toevoegen — dat gebeurt in Beheer → Spelers.  
 5. Sessies **niet** manueel typen — menu **Academy sync → Alles bijwerken**.

@@ -1,15 +1,11 @@
-Naam,14/09 Training ma Heilig-Hart,17/09 Training do Redingenhof,21/09 Training ma Heilig-Hart,24/09 Training do Redingenhof,Totaal
-sessie_id,t-2026-09-14,t-2026-09-17,t-2026-09-21,t-2026-09-24,
-Alfred,TRUE,FALSE,FALSE,FALSE,1
-Ilya,FALSE,FALSE,FALSE,FALSE,0
-Elias,FALSE,FALSE,FALSE,FALSE,0
-Felix,TRUE,FALSE,FALSE,FALSE,1
-Sam,FALSE,FALSE,FALSE,FALSE,0
-Bas D,FALSE,FALSE,FALSE,FALSE,0
-Jarne,FALSE,FALSE,FALSE,FALSE,0
-Charlie,FALSE,FALSE,FALSE,FALSE,0
-Jia Le,FALSE,FALSE,FALSE,FALSE,0
-Bas N,FALSE,FALSE,FALSE,FALSE,0
-Jacob,FALSE,FALSE,FALSE,FALSE,0
-Thomas,FALSE,FALSE,FALSE,FALSE,0
-Totaal,2,0,0,0,
+,Training 1,Training 2,Training 3,Training 4,Totaal
+,24-8-2026,27-8-2026,31-8-2026,3-9-2026,
+sessie_id,t-2026-08-24,t-2026-08-27,t-2026-08-31,t-2026-09-03,
+Alfred,Ja,Ja,Ja,Ja,4
+Ilya,Nee,Nee,Ja,Ja,2
+Elias,Nee,Nee,Ja,Ja,2
+Totaal,1,1,3,3,
+,
+Tafel,,,,,
+Truitjes en fruitje,,,,,
+Afspraken zie apart blad,,,,,

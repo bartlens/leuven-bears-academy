@@ -484,9 +484,12 @@ function lookupAtt_(map, keys, sid, field) {
 }
 
 /**
- * Trainingen — zoals origineel U10 C trainingsblad:
- * Row 1 labels (DD/MM + label) · Row 2 sessie_id (verborgen) · Col A Naam · Totaal
- * + Totaal-rij onderaan. Checkboxes = komt.
+ * Trainingen — layout zoals origineel U10 C trainingsblad:
+ * R1: Training 1, Training 2, … Totaal
+ * R2: 24-8-2026, …
+ * R3: sessie_id (verborgen)
+ * Spelers · Totaal-rij · helper-rijen (Tafel / Truitjes / Afspraken)
+ * Cellen: Ja / Nee dropdown + groen/rood/grijs (zoals origineel).
  */
 function writeTrainingenMatrix_(ss, players, trainings, existing) {
   var sh = ss.getSheetByName(SHEET_TRAININGEN_) || ss.insertSheet(SHEET_TRAININGEN_);
@@ -497,186 +500,158 @@ function writeTrainingenMatrix_(ss, players, trainings, existing) {
     return String(s.zichtbaar || 'ja').toLowerCase() !== 'nee';
   });
   var nSess = visible.length;
-  var nCols = 1 + nSess + 1;
+  var nCols = 1 + nSess + 1; // Naam + sessies + Totaal
 
-  var headerRow = ['Naam'];
+  var labelRow = [''];
+  var dateRow = [''];
   var idRow = ['sessie_id'];
   for (var i = 0; i < nSess; i++) {
-    headerRow.push(trainingHeaderLabel_(visible[i]));
+    labelRow.push('Training ' + (i + 1));
+    dateRow.push(formatDateDMyyyy_(visible[i].datum));
     idRow.push(String(visible[i].sessie_id || ''));
   }
-  headerRow.push('Totaal');
+  labelRow.push('Totaal');
+  dateRow.push('');
   idRow.push('');
-
-  var dataRows = [];
-  for (var p = 0; p < sorted.length; p++) {
-    var player = sorted[p];
-    var row = [player.voornaam]; // zoals origineel: voornaam links
-    var keys = playerMatchKeys_(player);
-    for (var s = 0; s < nSess; s++) {
-      row.push(lookupAtt_(existing, keys, String(visible[s].sessie_id || ''), null));
-    }
-    row.push('');
-    dataRows.push(row);
-  }
-
-  // Totaal-rij (COUNTIF per kolom)
-  var totalRow = ['Totaal'];
-  for (var t = 0; t < nSess; t++) totalRow.push('');
-  totalRow.push('');
-
-  resetSheet_(sh);
-  var all = [headerRow, idRow].concat(dataRows);
-  if (sorted.length) all.push(totalRow);
-  sh.getRange(1, 1, all.length, nCols).setValues(all);
-
-  var firstPlayerRow = 3;
-  var lastPlayerRow = 2 + sorted.length;
-  for (var r = 0; r < sorted.length; r++) {
-    var rowNum = firstPlayerRow + r;
-    if (nSess > 0) {
-      sh.getRange(rowNum, nCols).setFormula(
-        '=COUNTIF(' + colToLetter_(2) + rowNum + ':' + colToLetter_(1 + nSess) + rowNum + ',TRUE)'
-      );
-    } else {
-      sh.getRange(rowNum, nCols).setValue(0);
-    }
-  }
-  if (sorted.length && nSess > 0) {
-    var totRowNum = lastPlayerRow + 1;
-    for (var c = 0; c < nSess; c++) {
-      var colLetter = colToLetter_(2 + c);
-      sh.getRange(totRowNum, 2 + c).setFormula(
-        '=COUNTIF(' + colLetter + firstPlayerRow + ':' + colLetter + lastPlayerRow + ',TRUE)'
-      );
-    }
-  }
-
-  styleMatrixHeader_(sh, nCols, 48);
-  if (sh.getMaxRows() >= 2) sh.hideRows(2);
-  sh.setFrozenColumns(1);
-  sh.setFrozenRows(1);
-  sh.setColumnWidth(1, 130);
-  for (var cw = 2; cw <= 1 + nSess; cw++) sh.setColumnWidth(cw, 88);
-  sh.setColumnWidth(nCols, 70);
-
-  if (sorted.length && nSess > 0) {
-    applyCheckboxesWithColors_(sh.getRange(firstPlayerRow, 2, lastPlayerRow, 1 + nSess));
-  }
-}
-
-/**
- * Wedstrijden — zoals origineel U10 C matchblad:
- * Per match 2 kolommen: Kan aanwezig zijn + Heeft gespeeld (merged header).
- * Row 1 match-label · Row 2 sessie_id (verborgen, op 1e kolom van paar)
- * Row 3 sublabels · spelers · Totaal-rij · Totaal-kolom (= gespeeld).
- */
-function writeWedstrijdenMatrix_(ss, players, matches, existing) {
-  var sh = ss.getSheetByName(SHEET_WEDSTRIJDEN_) || ss.insertSheet(SHEET_WEDSTRIJDEN_);
-  var sorted = (players || []).slice().sort(function (a, b) {
-    return Number(a.nummer) - Number(b.nummer);
-  });
-  var visible = (matches || []).filter(function (s) {
-    return String(s.zichtbaar || 'ja').toLowerCase() !== 'nee';
-  });
-  var nMatch = visible.length;
-  var nCols = 1 + nMatch * 2 + 1; // Naam + pairs + Totaal
-
-  var headerRow = ['Naam'];
-  var idRow = ['sessie_id'];
-  var subRow = [''];
-  for (var i = 0; i < nMatch; i++) {
-    headerRow.push(matchHeaderLabel_(visible[i]));
-    headerRow.push(''); // merge partner
-    idRow.push(String(visible[i].sessie_id || ''));
-    idRow.push(String(visible[i].sessie_id || '') + '|gespeeld');
-    subRow.push('Kan aanwezig zijn');
-    subRow.push('Heeft gespeeld');
-  }
-  headerRow.push('Totaal gespeeld');
-  idRow.push('');
-  subRow.push('');
 
   var dataRows = [];
   for (var p = 0; p < sorted.length; p++) {
     var player = sorted[p];
     var row = [player.voornaam];
     var keys = playerMatchKeys_(player);
-    for (var s = 0; s < nMatch; s++) {
-      var sid = String(visible[s].sessie_id || '');
-      row.push(lookupAtt_(existing, keys, sid, 'aan'));
-      row.push(lookupAtt_(existing, keys, sid, 'gespeeld'));
+    for (var s = 0; s < nSess; s++) {
+      row.push(toJaNee_(lookupAtt_(existing, keys, String(visible[s].sessie_id || ''), null)));
     }
     row.push('');
     dataRows.push(row);
   }
 
   var totalRow = ['Totaal'];
-  for (var t = 0; t < nMatch * 2; t++) totalRow.push('');
+  for (var t = 0; t < nSess; t++) totalRow.push('');
   totalRow.push('');
 
-  resetSheet_(sh);
-  var all = [headerRow, idRow, subRow].concat(dataRows);
-  if (sorted.length) all.push(totalRow);
-  sh.getRange(1, 1, all.length, nCols).setValues(all);
+  var helperRows = [
+    [''],
+    ['Tafel'],
+    ['Truitjes en fruitje'],
+    ['Afspraken zie apart blad']
+  ];
 
-  // Merge match headers (row 1)
-  for (var m = 0; m < nMatch; m++) {
-    var c1 = 2 + m * 2;
-    sh.getRange(1, c1, 1, c1 + 1).merge();
-  }
+  resetSheet_(sh);
+  var all = [labelRow, dateRow, idRow].concat(dataRows);
+  if (sorted.length) all.push(totalRow);
+  all = all.concat(helperRows);
+  sh.getRange(1, 1, all.length, nCols).setValues(all);
 
   var firstPlayerRow = 4;
   var lastPlayerRow = 3 + sorted.length;
+  var totRowNum = sorted.length ? lastPlayerRow + 1 : 0;
+
   for (var r = 0; r < sorted.length; r++) {
-    var rn = firstPlayerRow + r;
-    if (nMatch > 0) {
-      // Som van "Heeft gespeeld"-kolommen (niet aaneengesloten → N()+N()+…)
-      var bits = [];
-      for (var mj = 0; mj < nMatch; mj++) {
-        bits.push('N(' + colToLetter_(3 + mj * 2) + rn + ')');
-      }
-      sh.getRange(rn, nCols).setFormula('=' + bits.join('+'));
+    var rowNum = firstPlayerRow + r;
+    if (nSess > 0) {
+      sh.getRange(rowNum, nCols).setFormula(
+        '=COUNTIF(' + colToLetter_(2) + rowNum + ':' + colToLetter_(1 + nSess) + rowNum + ',"Ja")'
+      );
     } else {
-      sh.getRange(rn, nCols).setValue(0);
+      sh.getRange(rowNum, nCols).setValue(0);
     }
   }
-
-  if (sorted.length && nMatch > 0) {
-    var totRowNum = lastPlayerRow + 1;
-    for (var c = 0; c < nMatch * 2; c++) {
+  if (sorted.length && nSess > 0) {
+    for (var c = 0; c < nSess; c++) {
       var colLetter = colToLetter_(2 + c);
       sh.getRange(totRowNum, 2 + c).setFormula(
-        '=COUNTIF(' + colLetter + firstPlayerRow + ':' + colLetter + lastPlayerRow + ',TRUE)'
+        '=COUNTIF(' + colLetter + firstPlayerRow + ':' + colLetter + lastPlayerRow + ',"Ja")'
       );
     }
   }
 
-  styleMatrixHeader_(sh, nCols, 64);
-  sh.getRange(3, 1, 3, nCols).setFontWeight('bold').setWrap(true).setHorizontalAlignment('center');
-  if (sh.getMaxRows() >= 2) sh.hideRows(2);
-  sh.setFrozenColumns(1);
-  sh.setFrozenRows(1);
-  sh.setColumnWidth(1, 130);
-  for (var cw = 2; cw < nCols; cw++) sh.setColumnWidth(cw, 78);
-  sh.setColumnWidth(nCols, 90);
+  sh.getRange(1, 1, 1, nCols)
+    .setFontWeight('bold')
+    .setHorizontalAlignment('center')
+    .setVerticalAlignment('middle');
+  sh.getRange(2, 1, 2, nCols)
+    .setFontWeight('bold')
+    .setHorizontalAlignment('center')
+    .setNumberFormat('@');
+  if (sorted.length) {
+    sh.getRange(totRowNum, 1, totRowNum, nCols).setFontWeight('bold');
+  }
 
-  if (sorted.length && nMatch > 0) {
-    // Aanwezig-kolommen (groen/rood) + gespeeld-kolommen (neutrale checkbox)
-    for (var mk = 0; mk < nMatch; mk++) {
-      var aanCol = 2 + mk * 2;
-      var gesCol = 3 + mk * 2;
-      applyCheckboxesWithColors_(sh.getRange(firstPlayerRow, aanCol, lastPlayerRow, aanCol));
-      applyCheckboxesPlain_(sh.getRange(firstPlayerRow, gesCol, lastPlayerRow, gesCol));
-    }
+  var blankAfterTotal = totRowNum ? totRowNum + 1 : lastPlayerRow + 1;
+  var tafelRow = blankAfterTotal + 1;
+  sh.getRange(tafelRow, 1, tafelRow + 2, 1).setFontWeight('bold');
+  sh.getRange(tafelRow, 1, tafelRow + 2, nCols).setBackground('#F5F5F5');
+
+  if (sh.getMaxRows() >= 3) sh.hideRows(3);
+  sh.setFrozenColumns(1);
+  sh.setFrozenRows(2);
+  sh.setColumnWidth(1, 160);
+  for (var cw = 2; cw <= 1 + nSess; cw++) sh.setColumnWidth(cw, 100);
+  sh.setColumnWidth(nCols, 70);
+  sh.setRowHeight(1, 28);
+  sh.setRowHeight(2, 28);
+
+  if (sorted.length && nSess > 0) {
+    applyJaNeeValidation_(sh.getRange(firstPlayerRow, 2, lastPlayerRow, 1 + nSess));
   }
 }
 
-function trainingHeaderLabel_(s) {
-  var ddmm = formatDateDdMm_(s.datum);
-  var label = String(s.label || '').trim();
-  if (ddmm && label) return ddmm + '\n' + label;
-  return ddmm || label || String(s.sessie_id || '');
+function formatDateDMyyyy_(iso) {
+  var s = String(iso || '').trim();
+  var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return s;
+  return String(Number(m[3])) + '-' + String(Number(m[2])) + '-' + m[1];
+}
+
+function toJaNee_(v) {
+  if (v === true || v === 'TRUE' || v === 'true' || v === 1 || v === '1') return 'Ja';
+  if (v === false || v === 'FALSE' || v === 'false' || v === 0 || v === '0') return 'Nee';
+  var t = String(v == null ? '' : v).trim().toLowerCase();
+  if (!t || t === '?' || t === 'onbekend') return '';
+  if (t === 'ja' || t === 'j' || t === 'yes' || t === 'y' || t === 'x' || t === '✓' || t === '✔') return 'Ja';
+  if (t === 'nee' || t === 'n' || t === 'no') return 'Nee';
+  return '';
+}
+
+function applyJaNeeValidation_(range) {
+  var values = range.getValues();
+  for (var r = 0; r < values.length; r++) {
+    for (var c = 0; c < values[r].length; c++) {
+      values[r][c] = toJaNee_(values[r][c]);
+    }
+  }
+  range.setValues(values);
+  range.clearDataValidations();
+  try { range.removeCheckboxes(); } catch (e) {}
+
+  var rule = SpreadsheetApp.newDataValidation()
+    .requireValueInList(['Ja', 'Nee'], true)
+    .setAllowInvalid(true)
+    .build();
+  range.setDataValidation(rule);
+
+  var sheet = range.getSheet();
+  var existing = sheet.getConditionalFormatRules();
+  existing.push(SpreadsheetApp.newConditionalFormatRule()
+    .whenTextEqualTo('Ja')
+    .setBackground('#81C784')
+    .setFontColor('#1B5E20')
+    .setRanges([range])
+    .build());
+  existing.push(SpreadsheetApp.newConditionalFormatRule()
+    .whenTextEqualTo('Nee')
+    .setBackground('#E57373')
+    .setFontColor('#B71C1C')
+    .setRanges([range])
+    .build());
+  existing.push(SpreadsheetApp.newConditionalFormatRule()
+    .whenCellEmpty()
+    .setBackground('#EEEEEE')
+    .setRanges([range])
+    .build());
+  sheet.setConditionalFormatRules(existing);
+  range.setHorizontalAlignment('center');
 }
 
 function matchHeaderLabel_(s) {

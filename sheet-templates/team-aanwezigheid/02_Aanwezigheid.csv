@@ -1,5 +1,5 @@
 _note,waarde
 layout,"Vervangen door tabs Trainingen + Wedstrijden (U10 C-oriëntatie: 1 rij per kind, kolommen = sessies)."
-Trainingen,"Zie 02_Trainingen.csv — vinkje = komt op training."
+Trainingen,"Zie 02_Trainingen.csv — Ja/Nee = komt op training (groen/rood)."
 Wedstrijden,"Zie 02_Wedstrijden.csv — per match: Kan aanwezig zijn + Heeft gespeeld."
 sync,"Academy sync schrijft Trainingen + Wedstrijden; oude tab Aanwezigheid wordt niet meer herschreven (waarden worden wel gemigreerd bij eerste sync)."
