@@ -111,4 +111,4 @@ Optioneel: trigger “bij openen” of elke 15 minuten, zodat coaches niet manue
 - Spelers: kies uit de keuzelijsten. `random` mag bij emoji, label, accent, move, haarstijl, haarkleur, huidskleur.
 - Kleuren: gewone namen (`blond-goud`, `bruin`, `zwart`, `licht`, …) — geen hex-codes in de sheet.
 
-- Spelers: geen `volgorde`-kolom (volgorde = `nummer`). Dropdowns alleen als nummer/naam ingevuld is.
+- Spelers: geen `volgorde` of `zichtbaar` (volgorde = `nummer`). Dropdowns alleen op gevulde rijen vanaf rij 2.

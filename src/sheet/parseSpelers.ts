@@ -7,11 +7,6 @@ import type { TeamGroup } from '../data/teams'
 import { resolvePlayerAppearance } from '../lib/playerAppearance'
 import { csvToObjects } from './csv'
 
-function isVisible(raw: string | undefined): boolean {
-  const v = (raw ?? '').trim().toLowerCase()
-  if (!v) return true
-  return v === 'ja' || v === 'yes' || v === 'true' || v === '1'
-}
 
 function lookFromAppearance(appearance: ReturnType<typeof resolvePlayerAppearance>) {
   return {
@@ -33,7 +28,6 @@ export function parseSpelersCsv(
     const firstName = (row.voornaam ?? '').trim()
     const number = Number.parseInt(row.nummer ?? '', 10)
     if (!firstName || !Number.isFinite(number)) continue
-    if (!isVisible(row.zichtbaar)) continue
 
     const id = `${opts.teamSlug}-${number}`
     const appearance = resolvePlayerAppearance(

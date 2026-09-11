@@ -1,26 +1,13 @@
 /**
- * Plak dit in de BEHEER-spreadsheet (niet Aanwezigheid):
- * Extensies → Apps Script → nieuw bestand → plak → opslaan.
+ * Plak in BEHEER: Extensies → Apps Script → plak → run setupSpelersDropdowns().
  *
- * Eerste keer: run setupSpelersDropdowns() eenmaal (rechten toestaan).
- * Menu: Academy Beheer → Spelers-dropdowns zetten.
- *
- * Regels:
- * - Geen kolom "volgorde" — sortering op de site = nummer.
- * - Dropdowns ALLEEN op rijen met nummer én/of voornaam (lege rijen blijven proper).
- * - Nieuwe speler: onEdit zet defaults op "random" + dropdowns op die rij.
- * - Lege rijen: data validation wordt gewist.
+ * - Geen kolommen volgorde of zichtbaar (worden verwijderd als ze bestaan).
+ * - Volgorde op de site = nummer.
+ * - Dropdowns ALLEEN op rijen met nummer en/of voornaam (vanaf rij 2).
+ * - Lege rijen: geen dropdowns.
  */
-
 var SPELERS_DROPDOWN_COLS = [
-  'label',
-  'emoji',
-  'accent',
-  'move',
-  'haarstijl',
-  'haarkleur',
-  'huidskleur',
-  'zichtbaar',
+  'label', 'emoji', 'accent', 'move', 'haarstijl', 'haarkleur', 'huidskleur',
 ];
 var SPELERS_ROW_START = 2;
 var SPELERS_ROW_END = 200;
@@ -32,14 +19,13 @@ function setupSpelersDropdowns() {
   if (!spelers) throw new Error('Tab "Spelers" ontbreekt');
   if (!keuzes) throw new Error('Tab "Keuzelijsten" ontbreekt');
 
-  // Drop obsolete volgorde column if still present
-  removeVolgordeColumn_(spelers);
+  deleteColumnIfPresent_(spelers, 'volgorde');
+  deleteColumnIfPresent_(spelers, 'zichtbaar');
 
   var lists = readKeuzelijsten_(keuzes);
   var headers = getHeaders_(spelers);
   var rules = buildRules_(lists, headers);
 
-  // Clear validations on the whole appearance block first (empty rows stay clean)
   clearDropdownValidations_(spelers, headers);
 
   var filled = 0;
@@ -51,57 +37,43 @@ function setupSpelersDropdowns() {
   }
 
   SpreadsheetApp.getUi().alert(
-    'Spelers-dropdowns gezet op ' +
-      filled +
-      ' gevulde rij(en). Lege rijen hebben geen dropdowns. Kolom volgorde (indien aanwezig) is verwijderd.',
+    'Spelers-dropdowns gezet op ' + filled +
+    ' gevulde rij(en) vanaf rij 2. Lege rijen zonder dropdowns. Kolommen volgorde/zichtbaar verwijderd indien aanwezig.'
   );
 }
 
-/** Simple trigger: owner edits Spelers. */
-function onEdit(e) {
-  onEditSpelersDefaults(e);
-}
+function onEdit(e) { onEditSpelersDefaults(e); }
 
 function onEditSpelersDefaults(e) {
   if (!e || !e.range) return;
   var sheet = e.range.getSheet();
   if (sheet.getName() !== 'Spelers') return;
-
   var row = e.range.getRow();
   if (row < SPELERS_ROW_START || row > SPELERS_ROW_END) return;
 
-  var ss = SpreadsheetApp.getActive();
-  var keuzes = ss.getSheetByName('Keuzelijsten');
+  var keuzes = SpreadsheetApp.getActive().getSheetByName('Keuzelijsten');
   if (!keuzes) return;
-
   var headers = getHeaders_(sheet);
-  var lists = readKeuzelijsten_(keuzes);
-  var rules = buildRules_(lists, headers);
+  var rules = buildRules_(readKeuzelijsten_(keuzes), headers);
 
   if (!rowHasPlayer_(sheet, headers, row)) {
-    // Cleared name/number → remove dropdowns on this row
     clearDropdownsOnRow_(sheet, headers, row);
     return;
   }
-
   applyDropdownsToRow_(sheet, headers, rules, row);
   fillEmptyAppearanceWithRandomOnRow_(sheet, headers, row);
 }
 
-function removeVolgordeColumn_(sheet) {
+function deleteColumnIfPresent_(sheet, name) {
   var headers = getHeaders_(sheet);
-  var idx = headers.indexOf('volgorde');
+  var idx = headers.indexOf(name);
   if (idx < 0) return;
   sheet.deleteColumn(idx + 1);
 }
 
 function getHeaders_(sheet) {
-  return sheet
-    .getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1))
-    .getValues()[0]
-    .map(function (h) {
-      return String(h || '').trim();
-    });
+  return sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), 1))
+    .getValues()[0].map(function (h) { return String(h || '').trim(); });
 }
 
 function rowHasPlayer_(sheet, headers, row) {
@@ -110,8 +82,7 @@ function rowHasPlayer_(sheet, headers, row) {
   if (iNum < 0 || iNaam < 0) return false;
   var num = sheet.getRange(row, iNum + 1).getValue();
   var naam = String(sheet.getRange(row, iNaam + 1).getValue() || '').trim();
-  var hasNum = !(num === '' || num == null);
-  return hasNum || !!naam;
+  return !(num === '' || num == null) || !!naam;
 }
 
 function buildRules_(lists, headers) {
@@ -132,10 +103,8 @@ function buildRules_(lists, headers) {
 function applyDropdownsToRow_(sheet, headers, rules, row) {
   SPELERS_DROPDOWN_COLS.forEach(function (colName) {
     var colIdx = headers.indexOf(colName);
-    if (colIdx < 0) return;
-    var rule = rules[colName];
-    if (!rule) return;
-    sheet.getRange(row, colIdx + 1).setDataValidation(rule);
+    if (colIdx < 0 || !rules[colName]) return;
+    sheet.getRange(row, colIdx + 1).setDataValidation(rules[colName]);
   });
 }
 
@@ -151,25 +120,18 @@ function clearDropdownValidations_(sheet, headers) {
   SPELERS_DROPDOWN_COLS.forEach(function (colName) {
     var colIdx = headers.indexOf(colName);
     if (colIdx < 0) return;
-    sheet
-      .getRange(SPELERS_ROW_START, colIdx + 1, SPELERS_ROW_END, colIdx + 1)
+    sheet.getRange(SPELERS_ROW_START, colIdx + 1, SPELERS_ROW_END, colIdx + 1)
       .clearDataValidations();
   });
 }
 
 function fillEmptyAppearanceWithRandomOnRow_(sheet, headers, row) {
   SPELERS_DROPDOWN_COLS.forEach(function (colName) {
-    if (colName === 'zichtbaar') return; // default ja separately
     var colIdx = headers.indexOf(colName);
     if (colIdx < 0) return;
     var cell = sheet.getRange(row, colIdx + 1);
     if (!String(cell.getValue() || '').trim()) cell.setValue('random');
   });
-  var iZ = headers.indexOf('zichtbaar');
-  if (iZ >= 0) {
-    var z = sheet.getRange(row, iZ + 1);
-    if (!String(z.getValue() || '').trim()) z.setValue('ja');
-  }
 }
 
 function readKeuzelijsten_(sheet) {
