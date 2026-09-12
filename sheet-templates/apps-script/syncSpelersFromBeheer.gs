@@ -746,6 +746,11 @@ function writeTrainingenMatrix_(ss, players, trainings, existing) {
   if (sorted.length && nSess > 0) {
     applyJaNeeValidation_(sh.getRange(firstPlayerRow, 2, lastPlayerRow, 1 + nSess));
   }
+  // Totaal + eronder wit
+  if (totRowNum > 0) {
+    var wEnd = Math.max(totRowNum + 15, sh.getMaxRows());
+    sh.getRange(totRowNum, 1, wEnd, nCols).setBackground(null);
+  }
 }
 
 /**
@@ -852,7 +857,7 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
     sh.getRange(tafelW + 1, cAan).setValue('Naam (#nummer)');
   }
   sh.getRange(tafelW, 1, tafelW + 1, 1).setFontWeight('bold');
-  sh.getRange(tafelW, 1, tafelW + 2, nCols).setBackground('#F5F5F5');
+  sh.getRange(tafelW, 1, tafelW + 2, nCols).setBackground(null); // wit, geen grijs
 
   // Opmaak
   for (var hi = 0; hi < nMatch; hi++) {
@@ -1215,6 +1220,10 @@ function herstelTrainingenTotaalEnVoet_() {
         totaalJaFormula_(colL, firstPlayer, lastPlayer)
       );
     }
+    // Totaal + eronder: wit (geen lichtgrijs)
+    var whiteEnd = Math.max(lastRow, totRow + 20, sh.getMaxRows());
+    sh.getRange(totRow, 1, whiteEnd, Math.max(endCol, nCols, sh.getMaxColumns()))
+      .setBackground(null);
   }
 
   ss.toast('Totaal telt Ja’s; voetregels zonder dropdown.', 'Academy sync', 6);
@@ -1842,7 +1851,7 @@ function herstelWedstrijdenVoet_(ss) {
     }
   }
   sh.getRange(tafel, 1, tafel + 2, 1).setFontWeight('bold');
-  sh.getRange(tafel, 1, tafel + 2, lastCol).setBackground('#F5F5F5');
+  sh.getRange(tafel, 1, tafel + 2, lastCol).setBackground(null);
   clearValidationsHard_(sh.getRange(totRow, 2, tafel + 2, lastCol));
 }
 
