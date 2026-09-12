@@ -454,7 +454,7 @@ function lookupAtt_(map, keys, sid, field) {
  * R1: Training 1, Training 2, … Totaal
  * R2: 24-8-2026, …
  * R3: sessie_id (verborgen)
- * Spelers · Totaal-rij · helper-rijen (Tafel / Truitjes / Afspraken)
+ * Spelers · Totaal-rij (geen Tafel/truitjes — die horen bij Wedstrijden)
  * Cellen: Ja / Nee dropdown + groen/rood/grijs (zoals origineel).
  */
 function writeTrainingenMatrix_(ss, players, trainings, existing) {
@@ -496,17 +496,10 @@ function writeTrainingenMatrix_(ss, players, trainings, existing) {
   for (var t = 0; t < nSess; t++) totalRow.push('');
   totalRow.push('');
 
-  var helperRows = [
-    [''],
-    ['Tafel'],
-    ['Truitjes en fruitje'],
-    ['Afspraken zie apart blad']
-  ];
-
+  // Geen Tafel/truitjes op Trainingen — die horen alleen bij Wedstrijden
   resetSheet_(sh);
   var all = [labelRow, dateRow, idRow].concat(dataRows);
   if (sorted.length) all.push(totalRow);
-  all = all.concat(helperRows);
   sh.getRange(1, 1, all.length, nCols).setValues(all);
 
   var firstPlayerRow = 4;
@@ -544,11 +537,6 @@ function writeTrainingenMatrix_(ss, players, trainings, existing) {
     sh.getRange(totRowNum, 1, totRowNum, nCols).setFontWeight('bold');
   }
 
-  var blankAfterTotal = totRowNum ? totRowNum + 1 : lastPlayerRow + 1;
-  var tafelRow = blankAfterTotal + 1;
-  sh.getRange(tafelRow, 1, tafelRow + 2, 1).setFontWeight('bold');
-  sh.getRange(tafelRow, 1, tafelRow + 2, nCols).setBackground('#F5F5F5');
-
   if (sh.getMaxRows() >= 3) sh.hideRows(3);
   sh.setFrozenColumns(1);
   sh.setFrozenRows(2);
@@ -562,6 +550,135 @@ function writeTrainingenMatrix_(ss, players, trainings, existing) {
     applyJaNeeValidation_(sh.getRange(firstPlayerRow, 2, lastPlayerRow, 1 + nSess));
   }
 }
+
+/**
+ * Wedstrijden — zoals origineel U10 C matchblad:
+ * Per match 2 kolommen: Kan aanwezig zijn + Heeft gespeeld (merged header).
+ * Row 1 match-label · Row 2 sessie_id (verborgen, op 1e kolom van paar)
+ * Row 3 sublabels · spelers · Totaal-rij · Totaal-kolom (= gespeeld).
+ */
+function writeWedstrijdenMatrix_(ss, players, matches, existing) {
+  var sh = ss.getSheetByName(SHEET_WEDSTRIJDEN_) || ss.insertSheet(SHEET_WEDSTRIJDEN_);
+  var sorted = (players || []).slice().sort(function (a, b) {
+    return Number(a.nummer) - Number(b.nummer);
+  });
+  var visible = (matches || []).filter(function (s) {
+    return String(s.zichtbaar || 'ja').toLowerCase() !== 'nee';
+  });
+  var nMatch = visible.length;
+  var nCols = 1 + nMatch * 2 + 1; // Naam + pairs + Totaal
+
+  var headerRow = ['Naam'];
+  var idRow = ['sessie_id'];
+  var subRow = [''];
+  for (var i = 0; i < nMatch; i++) {
+    headerRow.push(matchHeaderLabel_(visible[i]));
+    headerRow.push(''); // merge partner
+    idRow.push(String(visible[i].sessie_id || ''));
+    idRow.push(String(visible[i].sessie_id || '') + '|gespeeld');
+    subRow.push('Kan aanwezig zijn');
+    subRow.push('Heeft gespeeld');
+  }
+  headerRow.push('Totaal gespeeld');
+  idRow.push('');
+  subRow.push('');
+
+  var dataRows = [];
+  for (var p = 0; p < sorted.length; p++) {
+    var player = sorted[p];
+    var row = [player.voornaam];
+    var keys = playerMatchKeys_(player);
+    for (var s = 0; s < nMatch; s++) {
+      var sid = String(visible[s].sessie_id || '');
+      row.push(toJaNee_(lookupAtt_(existing, keys, sid, 'aan')));
+      row.push(toJaNee_(lookupAtt_(existing, keys, sid, 'gespeeld')));
+    }
+    row.push('');
+    dataRows.push(row);
+  }
+
+  var totalRow = ['Totaal'];
+  for (var t = 0; t < nMatch * 2; t++) totalRow.push('');
+  totalRow.push('');
+
+  resetSheet_(sh);
+  var all = [headerRow, idRow, subRow].concat(dataRows);
+  if (sorted.length) all.push(totalRow);
+  sh.getRange(1, 1, all.length, nCols).setValues(all);
+
+  // Merge match headers (row 1)
+  for (var m = 0; m < nMatch; m++) {
+    var c1 = 2 + m * 2;
+    sh.getRange(1, c1, 1, c1 + 1).merge();
+  }
+
+  var firstPlayerRow = 4;
+  var lastPlayerRow = 3 + sorted.length;
+  for (var r = 0; r < sorted.length; r++) {
+    var rn = firstPlayerRow + r;
+    if (nMatch > 0) {
+      // Som van "Heeft gespeeld"-kolommen (niet aaneengesloten → N()+N()+…)
+      var bits = [];
+      for (var mj = 0; mj < nMatch; mj++) {
+        bits.push('IF(' + colToLetter_(3 + mj * 2) + rn + '="Ja";1;0)');
+      }
+      sh.getRange(rn, nCols).setFormula('=' + bits.join('+'));
+    } else {
+      sh.getRange(rn, nCols).setValue(0);
+    }
+  }
+
+  if (sorted.length && nMatch > 0) {
+    var totRowNum = lastPlayerRow + 1;
+    for (var c = 0; c < nMatch * 2; c++) {
+      var colLetter = colToLetter_(2 + c);
+      sh.getRange(totRowNum, 2 + c).setFormula(
+        '=COUNTIF(' + colLetter + firstPlayerRow + ':' + colLetter + lastPlayerRow + ';"Ja")'
+      );
+    }
+  }
+
+
+  // Voetregels ALLEEN bij Wedstrijden (Tafel / Truitjes / Afspraken)
+  var blankW = lastPlayerRow + 2; // na Totaal-rij
+  var tafelW = blankW + 1;
+  sh.getRange(blankW, 1).setValue('');
+  sh.getRange(tafelW, 1).setValue('Tafel');
+  sh.getRange(tafelW + 1, 1).setValue('Truitjes');
+  sh.getRange(tafelW + 2, 1).setValue('Afspraken zie apart blad');
+  for (var fi = 0; fi < nMatch; fi++) {
+    var cAan = 2 + fi * 2;
+    sh.getRange(tafelW, cAan).setValue('Naam');
+    sh.getRange(tafelW + 1, cAan).setValue('Naam (#nummer)');
+  }
+  sh.getRange(tafelW, 1, tafelW + 2, 1).setFontWeight('bold');
+  sh.getRange(tafelW, 1, tafelW + 2, nCols).setBackground('#F5F5F5');
+  if (sorted.length) {
+    try { clearValidationsHard_(sh.getRange(lastPlayerRow + 1, 2, tafelW + 2, nCols)); } catch (eV) {}
+  }
+
+  styleMatrixHeader_(sh, nCols, 64);
+  sh.getRange(3, 1, 3, nCols).setFontWeight('bold').setWrap(true).setHorizontalAlignment('center');
+  if (sh.getMaxRows() >= 2) sh.hideRows(2);
+  sh.setFrozenColumns(1);
+  sh.setFrozenRows(1);
+  sh.setColumnWidth(1, 130);
+  for (var cw = 2; cw < nCols; cw++) sh.setColumnWidth(cw, 78);
+  sh.setColumnWidth(nCols, 90);
+
+  if (sorted.length && nMatch > 0) {
+    for (var mk = 0; mk < nMatch; mk++) {
+      var aanCol = 2 + mk * 2;
+      var gesCol = 3 + mk * 2;
+      applyJaNeeValidation_(sh.getRange(firstPlayerRow, aanCol, lastPlayerRow, aanCol));
+      applyJaNeeValidation_(sh.getRange(firstPlayerRow, gesCol, lastPlayerRow, gesCol));
+    }
+    // Nogmaals: geen dropdown op Totaal/voet
+    try { clearValidationsHard_(sh.getRange(lastPlayerRow + 1, 2, lastPlayerRow + 6, nCols)); } catch (eV2) {}
+  }
+}
+
+
 
 function formatDateDMyyyy_(iso) {
   var s = String(iso || '').trim();
@@ -820,20 +937,20 @@ function herstelTrainingenTotaalEnVoet_() {
     }
   }
 
-  // Voetregels: labels + grijs, geen validatie
-  var blankRow = totRow > 0 ? totRow + 1 : lastPlayer + 1;
-  var tafelRow = blankRow + 1;
-  // Ensure labels
-  sh.getRange(blankRow, 1).setValue('');
-  sh.getRange(tafelRow, 1).setValue('Tafel');
-  sh.getRange(tafelRow + 1, 1).setValue('Truitjes en fruitje');
-  sh.getRange(tafelRow + 2, 1).setValue('Afspraken zie apart blad');
-  sh.getRange(tafelRow, 1, tafelRow + 2, 1).setFontWeight('bold');
+  // Trainingen: geen Tafel/truitjes-rijen (die horen bij Wedstrijden)
   var footEndCol = Math.max(endCol, nCols);
-  sh.getRange(tafelRow, 1, tafelRow + 2, footEndCol).setBackground('#F5F5F5');
-  // Clear any leftover validation/content in helper value cells (keep labels)
-  sh.getRange(blankRow, 2, tafelRow + 2, footEndCol).clearContent();
-  clearValidationsHard_(sh.getRange(blankRow, 2, tafelRow + 2, footEndCol));
+  // Wis eventuele oude Tafel-rijen onder Totaal (labels + content), behalve als leeg gelaten
+  var blankRow = totRow > 0 ? totRow + 1 : lastPlayer + 1;
+  var scanEnd = Math.min(sh.getLastRow(), blankRow + 6);
+  if (scanEnd >= blankRow) {
+    for (var rr = blankRow; rr <= scanEnd; rr++) {
+      var lab = String(sh.getRange(rr, 1).getDisplayValue() || '').trim();
+      if (!lab || lab.indexOf('Tafel') === 0 || lab.indexOf('Truitjes') === 0 || lab.indexOf('Afspraken') === 0) {
+        sh.getRange(rr, 1, rr, footEndCol).clearContent();
+        clearValidationsHard_(sh.getRange(rr, 1, rr, footEndCol));
+      }
+    }
+  }
 
   // Spelers-rijen opnieuw zacht stylen (ALLEEN spelers)
   if (lastPlayer >= firstPlayer && endCol >= 2) {
@@ -1324,3 +1441,152 @@ function shortLoc_(loc) {
   }
   return parts.join(' ');
 }
+
+/**
+ * NOODHERSTEL — plak onderaan Code.gs, run herstelAllesNaDataverlies()
+ * 1) Trainingen Ja/Nee uit oude sheet (leeg i.p.v. fout-Nee)
+ * 2) Pastel kleuren alleen op spelers
+ * 3) Wedstrijden voetregels Tafel/Truitjes/Afspraken
+ * 4) Geen Tafel op Trainingen
+ */
+var HERSTEL_PAYLOAD_ = {"rename": {"Bas D": "Bas Dekeyser", "Bas N": "Bas Nuytten", "Jia Le": "Jia Lee"}, "training": {"Alfred": {"2026-08-24": "Ja", "2026-08-27": "Ja", "2026-08-31": "Ja", "2026-09-03": "Ja", "2026-09-07": "Ja", "2026-09-10": "Ja"}, "Ilya": {"2026-08-24": "Nee", "2026-08-27": "Nee", "2026-08-31": "Ja", "2026-09-03": "Ja", "2026-09-07": "Ja", "2026-09-10": "Ja"}, "Elias": {"2026-08-24": "Nee", "2026-08-27": "Nee", "2026-08-31": "Ja", "2026-09-03": "Ja", "2026-09-07": "Ja", "2026-09-10": "Ja"}, "Felix": {"2026-08-24": "Ja", "2026-08-27": "Ja", "2026-08-31": "Ja", "2026-09-03": "Ja", "2026-09-07": "Ja", "2026-09-10": "Ja"}, "Sam": {"2026-08-24": "Ja", "2026-08-27": "Nee", "2026-08-31": "Nee", "2026-09-03": "Ja", "2026-09-07": "Ja", "2026-09-10": "Ja"}, "Bas Dekeyser": {"2026-08-24": "Ja", "2026-08-27": "Ja", "2026-08-31": "Ja", "2026-09-03": "Ja", "2026-09-07": "Ja", "2026-09-10": "Ja"}, "Jarne": {"2026-08-24": "Nee", "2026-08-27": "Nee", "2026-08-31": "Ja", "2026-09-03": "Ja", "2026-09-07": "Ja", "2026-09-10": "Ja"}, "Charlie": {"2026-08-24": "Ja", "2026-08-27": "Nee", "2026-08-31": "Ja", "2026-09-03": "Ja", "2026-09-07": "Ja", "2026-09-10": "Ja"}, "Jia Lee": {"2026-08-24": "Ja", "2026-08-27": "Ja", "2026-08-31": "Ja", "2026-09-03": "Ja", "2026-09-07": "Ja", "2026-09-10": "Ja"}, "Bas Nuytten": {"2026-08-24": "Nee", "2026-08-27": "Nee", "2026-08-31": "Ja", "2026-09-03": "Ja", "2026-09-07": "Ja", "2026-09-10": "Ja"}, "Jacob": {"2026-08-24": "Nee", "2026-08-27": "Nee", "2026-08-31": "Ja", "2026-09-03": "Ja", "2026-09-07": "Ja", "2026-09-10": "Ja"}, "Thomas": {"2026-08-24": "Ja", "2026-08-27": "Ja", "2026-08-31": "Nee", "2026-09-03": "Ja", "2026-09-07": "Nee", "2026-09-10": "Ja"}}, "match_att": {"Alfred": [["Ja", ""], ["Ja", ""], ["Ja", ""], ["Nee", ""], ["Ja", ""], ["Ja", ""], ["Nee", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""]], "Ilya": [["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""]], "Elias": [["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""]], "Felix": [["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""]], "Sam": [["Ja", ""], ["Ja", ""], ["Ja", ""], ["Nee", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""]], "Bas Dekeyser": [["Ja", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""]], "Jarne": [["Ja", ""], ["Ja", ""], ["Ja", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""]], "Charlie": [["Nee", ""], ["Ja", ""], ["Ja", ""], ["Nee", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""]], "Jia Lee": [["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""], ["Ja", ""]], "Bas Nuytten": [["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""]], "Jacob": [["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""]], "Thomas": [["Ja", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""]]}, "matches": [{"datum": "2026-09-27", "uur": "15:15", "tegenstander": "Clem Scherpenheuvel A", "thuis_of_uit": "uit", "locatie": "Stedeijke Sporthal Scherpenheuvel", "adres": "", "competitie": "aanwezigheid", "score_ons": "", "score_tegenstander": "", "status": "upcoming", "notitie": "VBL — alleen voor ouder-aanwezigheid (niet als site-extra)"}, {"datum": "2026-10-03", "uur": "09:00", "tegenstander": "GSC Aarschot B", "thuis_of_uit": "thuis", "locatie": "Campus Redingenhof", "adres": "", "competitie": "aanwezigheid", "score_ons": "", "score_tegenstander": "", "status": "upcoming", "notitie": "VBL — alleen voor ouder-aanwezigheid (niet als site-extra)"}, {"datum": "2026-10-11", "uur": "09:30", "tegenstander": "Dynamo Bertem B", "thuis_of_uit": "uit", "locatie": "Sportzaal Verona", "adres": "", "competitie": "aanwezigheid", "score_ons": "", "score_tegenstander": "", "status": "upcoming", "notitie": "VBL — alleen voor ouder-aanwezigheid (niet als site-extra)"}, {"datum": "2026-10-17", "uur": "09:00", "tegenstander": "KYD Kortenberg Young Devils A", "thuis_of_uit": "uit", "locatie": "Sporthal Erps-Kwerps", "adres": "", "competitie": "aanwezigheid", "score_ons": "", "score_tegenstander": "", "status": "upcoming", "notitie": "VBL — alleen voor ouder-aanwezigheid (niet als site-extra)"}, {"datum": "2026-10-24", "uur": "09:00", "tegenstander": "Hageland United A", "thuis_of_uit": "thuis", "locatie": "Campus Redingenhof", "adres": "", "competitie": "aanwezigheid", "score_ons": "", "score_tegenstander": "", "status": "upcoming", "notitie": "VBL — alleen voor ouder-aanwezigheid (niet als site-extra)"}, {"datum": "2026-11-14", "uur": "09:00", "tegenstander": "Clem Scherpenheuvel A", "thuis_of_uit": "thuis", "locatie": "Campus Redingenhof", "adres": "", "competitie": "aanwezigheid", "score_ons": "", "score_tegenstander": "", "status": "upcoming", "notitie": "VBL — alleen voor ouder-aanwezigheid (niet als site-extra)"}, {"datum": "2026-11-21", "uur": "09:30", "tegenstander": "GSG Aarschot B", "thuis_of_uit": "uit", "locatie": "Stedelijke Sporthal Demervallei", "adres": "", "competitie": "aanwezigheid", "score_ons": "", "score_tegenstander": "", "status": "upcoming", "notitie": "VBL — alleen voor ouder-aanwezigheid (niet als site-extra)"}, {"datum": "2026-11-28", "uur": "09:00", "tegenstander": "Dynamo Bertem B", "thuis_of_uit": "thuis", "locatie": "Campus Redingenhof", "adres": "", "competitie": "aanwezigheid", "score_ons": "", "score_tegenstander": "", "status": "upcoming", "notitie": "VBL — alleen voor ouder-aanwezigheid (niet als site-extra)"}, {"datum": "2026-12-05", "uur": "09:00", "tegenstander": "KYD Kortenberg Young Devils A", "thuis_of_uit": "thuis", "locatie": "Campus Redingenhof", "adres": "", "competitie": "aanwezigheid", "score_ons": "", "score_tegenstander": "", "status": "upcoming", "notitie": "VBL — alleen voor ouder-aanwezigheid (niet als site-extra)"}, {"datum": "2026-12-12", "uur": "16:00", "tegenstander": "Hageland United A", "thuis_of_uit": "uit", "locatie": "Sporthal Lubbeek", "adres": "", "competitie": "aanwezigheid", "score_ons": "", "score_tegenstander": "", "status": "upcoming", "notitie": "VBL — alleen voor ouder-aanwezigheid (niet als site-extra)"}]};
+
+function herstelAllesNaDataverlies() {
+  var ss = SpreadsheetApp.getActive();
+  var p = HERSTEL_PAYLOAD_;
+  herstelTrainingenData_(ss, p);
+  herstelWedstrijdenVoet_(ss);
+  // match att if columns exist
+  try { importWedstrijden_(ss, p); } catch (e) {}
+  // style colors players only
+  styleJaNeeOnSheet_(ss.getSheetByName('Trainingen'), 4);
+  styleJaNeeOnSheet_(ss.getSheetByName('Wedstrijden'), 4);
+  herstelTrainingenTotaalEnVoet_();
+  ss.toast('Data + kleuren + Wedstrijden-voet hersteld', 'Herstel', 8);
+}
+
+function herstelTrainingenData_(ss, p) {
+  var sh = ss.getSheetByName('Trainingen');
+  if (!sh) throw new Error('Geen Trainingen');
+  var meta = findTrainingenPlayerBlock_(sh, 4);
+  if (!meta) throw new Error('Geen spelers');
+  var dates = sh.getRange(2, 2, 2, meta.endCol).getDisplayValues()[0];
+  var dateToCol = {};
+  for (var c = 0; c < dates.length; c++) {
+    var d = String(dates[c] || '').trim();
+    var m = d.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+    if (!m) continue;
+    var iso = m[3] + '-' + ((Number(m[2]) < 10 ? '0' : '') + Number(m[2])) + '-' + ((Number(m[1]) < 10 ? '0' : '') + Number(m[1]));
+    dateToCol[iso] = c + 2;
+  }
+  var names = sh.getRange(meta.firstPlayer, 1, meta.lastPlayer, 1).getDisplayValues();
+  for (var r = 0; r < names.length; r++) {
+    var name = String(names[r][0] || '').trim();
+    if (p.rename && p.rename[name]) {
+      sh.getRange(meta.firstPlayer + r, 1).setValue(p.rename[name]);
+      name = p.rename[name];
+    }
+    var att = (p.training && p.training[name]) || {};
+    for (var iso in dateToCol) {
+      if (!Object.prototype.hasOwnProperty.call(dateToCol, iso)) continue;
+      // leeg als geen oude waarde — NOOIT Nee forceren
+      sh.getRange(meta.firstPlayer + r, dateToCol[iso]).setValue(att[iso] || '');
+    }
+  }
+}
+
+function herstelWedstrijdenVoet_(ss) {
+  var sh = ss.getSheetByName('Wedstrijden');
+  if (!sh) return;
+  var lastCol = sh.getLastColumn();
+  var lastRow = sh.getLastRow();
+  var names = sh.getRange(4, 1, Math.max(lastRow, 4), 1).getDisplayValues();
+  var lastPlayer = 3;
+  var totRow = 0;
+  for (var i = 0; i < names.length; i++) {
+    var n = String(names[i][0] || '').trim();
+    if (n === 'Totaal') { totRow = 4 + i; break; }
+    if (!n || n.indexOf('Tafel') === 0 || n.indexOf('Truitjes') === 0 || n.indexOf('Afspraken') === 0) break;
+    lastPlayer = 4 + i;
+  }
+  if (!totRow) totRow = lastPlayer + 1;
+  var blank = totRow + 1;
+  var tafel = blank + 1;
+  // Don't wipe existing name fills in voet if present — only ensure labels
+  if (!String(sh.getRange(tafel, 1).getDisplayValue() || '').trim()) {
+    sh.getRange(blank, 1).setValue('');
+    sh.getRange(tafel, 1).setValue('Tafel');
+    sh.getRange(tafel + 1, 1).setValue('Truitjes');
+    sh.getRange(tafel + 2, 1).setValue('Afspraken zie apart blad');
+  }
+  // Ensure placeholder Naam under each "Kan aanwezig" col if empty
+  var sub = sh.getRange(3, 2, 3, lastCol).getDisplayValues()[0];
+  for (var c = 0; c < sub.length; c++) {
+    if (String(sub[c] || '').indexOf('Kan aanwezig') >= 0) {
+      var col = c + 2;
+      if (!String(sh.getRange(tafel, col).getDisplayValue() || '').trim()) {
+        sh.getRange(tafel, col).setValue('Naam');
+      }
+      if (!String(sh.getRange(tafel + 1, col).getDisplayValue() || '').trim()) {
+        sh.getRange(tafel + 1, col).setValue('Naam (#nummer)');
+      }
+    }
+  }
+  sh.getRange(tafel, 1, tafel + 2, 1).setFontWeight('bold');
+  sh.getRange(tafel, 1, tafel + 2, lastCol).setBackground('#F5F5F5');
+  clearValidationsHard_(sh.getRange(totRow, 2, tafel + 2, lastCol));
+}
+
+function importWedstrijden_(ss, p) {
+  var sh = ss.getSheetByName('Wedstrijden');
+  if (!sh) return;
+  var lastCol = sh.getLastColumn();
+  if (lastCol < 2) return;
+  // Row 1 merged headers contain date like 27/09 or 27-9
+  var headers = sh.getRange(1, 2, 1, lastCol).getDisplayValues()[0];
+  var matchCols = []; // {aanCol, gesCol, idx}
+  var mi = 0;
+  for (var c = 0; c < headers.length; ) {
+    var h = String(headers[c] || '');
+    if (!h.trim()) { c++; continue; }
+    // find matching match by date in header
+    var idx = findMatchIndex_(h, p.matches, mi);
+    var aanCol = c + 2;
+    var gesCol = c + 3;
+    matchCols.push({ aanCol: aanCol, gesCol: gesCol, idx: idx });
+    mi++;
+    c += 2; // pair
+  }
+  var lastRow = sh.getLastRow();
+  var names = sh.getRange(4, 1, lastRow, 1).getDisplayValues();
+  for (var r = 0; r < names.length; r++) {
+    var name = String(names[r][0] || '').trim();
+    if (!name || name === 'Totaal') continue;
+    if (p.rename[name]) {
+      sh.getRange(4 + r, 1).setValue(p.rename[name]);
+      name = p.rename[name];
+    }
+    var pairs = p.match_att[name];
+    if (!pairs) continue;
+    for (var j = 0; j < matchCols.length; j++) {
+      var mc = matchCols[j];
+      var ix = mc.idx >= 0 ? mc.idx : j;
+      if (ix < 0 || ix >= pairs.length) continue;
+      sh.getRange(4 + r, mc.aanCol).setValue(pairs[ix][0] || '');
+      sh.getRange(4 + r, mc.gesCol).setValue(pairs[ix][1] || '');
+    }
+  }
+}
+
+function findMatchIndex_(header, matches, hint) {
+  for (var i = 0; i < matches.length; i++) {
+    var d = matches[i].datum; // 2026-09-27
+    var parts = d.split('-');
+    var dmy = String(Number(parts[2])) + '/' + String(Number(parts[1])) + '/' + parts[0];
+    var dmy2 = String(Number(parts[2])) + '-' + String(Number(parts[1])) + '-' + parts[0];
+    if (header.indexOf(dmy) >= 0 || header.indexOf(dmy2) >= 0) return i;
+    if (matches[i].tegenstander && header.indexOf(matches[i].tegenstander) >= 0) return i;
+  }
+  return hint < matches.length ? hint : -1;
+}
+
