@@ -64,7 +64,6 @@ function syncWedstrijdenVanuitVbl() {
   var matches = mergeMatchSessies_(vblMatches, sheetMatches);
   var existing = collectAllAttendanceMaps_(ss);
   writeWedstrijdenMatrix_(ss, players, matches, existing);
-  try { importWedstrijden_(ss, HERSTEL_PAYLOAD_); } catch (eImp) {}
   markVblBootstrapped_(ss);
   ss.toast(matches.length + ' wedstrijden uit VBL/Beheer (Trainingen onaangeroerd).', 'Academy sync', 8);
   return matches.length;
@@ -888,6 +887,9 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
   }
   sh.setColumnWidth(nCols, 90);
 
+  // Import oude match-att alleen op spelersrijen (vóór checkboxes)
+  try { importWedstrijdenPlayerAtt_(sh, HERSTEL_PAYLOAD_, firstPlayerRow, lastPlayerRow, nMatch); } catch (eImp) {}
+
   if (sorted.length && nMatch > 0) {
     for (var mk = 0; mk < nMatch; mk++) {
       var aanCol = 2 + mk * 2;
@@ -899,17 +901,15 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
       applyJaNeeValidation_(aanRange);
       applyCheckboxesPlain_(gesRange);
     }
-    try { clearValidationsHard_(sh.getRange(totRowNum, 2, tafelW + 2, nCols)); } catch (eV2) {}
   }
 
-  // Kolom A: nooit merge/checkbox (Sheets bug liet A1:A3 + vinkje staan)
+  // Kolom A opschonen
   try { sh.getRange(1, 1, 3, 1).breakApart(); } catch (eA) {}
-  try { sh.getRange(1, 1, lastPlayerRow + 5, 1).removeCheckboxes(); } catch (eAc) {}
-  sh.getRange(1, 1).setValue('').setFontWeight('normal');
+  try { sh.getRange(1, 1, Math.max(lastPlayerRow + 8, 20), 1).removeCheckboxes(); } catch (eAc) {}
+  sh.getRange(1, 1).clearContent().setFontWeight('normal').setFontSize(10).setFontColor('#000000');
   sh.getRange(2, 1).setValue('sessie_id');
-  sh.getRange(3, 1).setValue('');
+  sh.getRange(3, 1).clearContent();
 
-  // Spelersnamen: zelfde opmaak (geen bold/center van header-lek)
   if (sorted.length) {
     sh.getRange(firstPlayerRow, 1, lastPlayerRow, 1)
       .setFontWeight('normal')
@@ -919,12 +919,15 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
       .setVerticalAlignment('middle')
       .setBackground(null);
   }
-  // Totaal + eronder: wit, geen checkbox/FALSE-restjes; formules opnieuw
+
+  // Totaal + eronder: CONTENT wissen (FALSE blijft anders staan), dan formules/voet
   if (totRowNum > 0) {
-    var footEnd = Math.max(tafelW + 2, totRowNum + 8);
+    var footEnd = Math.max(tafelW + 2, totRowNum + 6);
+    sh.getRange(totRowNum, 1, footEnd, nCols).clearContent();
+    try { sh.getRange(totRowNum, 1, footEnd, nCols).removeCheckboxes(); } catch (eTc) {}
+    try { clearValidationsHard_(sh.getRange(totRowNum, 1, footEnd, nCols)); } catch (eTv) {}
     sh.getRange(totRowNum, 1, footEnd, nCols).setBackground(null);
-    try { sh.getRange(totRowNum, 2, footEnd, nCols).removeCheckboxes(); } catch (eTc) {}
-    try { clearValidationsHard_(sh.getRange(totRowNum, 2, footEnd, nCols)); } catch (eTv) {}
+
     sh.getRange(totRowNum, 1).setValue('Totaal').setFontWeight('bold');
     if (nMatch > 0) {
       for (var tc = 0; tc < nMatch; tc++) {
@@ -937,9 +940,8 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
           '=COUNTIF(' + gesL2 + firstPlayerRow + ':' + gesL2 + lastPlayerRow + ';TRUE)'
         );
       }
-      sh.getRange(totRowNum, nCols).clearContent();
     }
-    // Lege rij + Tafel/Truitjes opnieuw (zonder FALSE)
+
     sh.getRange(blankW, 1).setValue('');
     sh.getRange(tafelW, 1).setValue('Tafel').setFontWeight('bold');
     sh.getRange(tafelW + 1, 1).setValue('Truitjes').setFontWeight('bold');
@@ -952,20 +954,26 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
     }
   }
 
-
-  // Rij 1: merge per match (B1:C1, D1:E1, …) — helemaal op het eind
+  // Headers opnieuw zetten + mergen (ook Match 2)
   for (var hm = 0; hm < nMatch; hm++) {
     var hc = 2 + hm * 2;
-    var hLabel = String(headerRow[1 + hm * 2] || ('Match ' + (hm + 1)));
+    var hLabel = String(headerRow[1 + hm * 2] || '').trim();
+    if (!hLabel) hLabel = 'Match ' + (hm + 1);
     try { sh.getRange(1, hc, 1, hc + 1).breakApart(); } catch (eBr) {}
     sh.getRange(1, hc).setValue(hLabel)
       .setFontWeight('bold')
       .setWrap(true)
       .setVerticalAlignment('middle')
-      .setHorizontalAlignment('center');
-    sh.getRange(1, hc + 1).setValue('');
+      .setHorizontalAlignment('center')
+      .setFontColor('#000000')
+      .setFontSize(10);
+    sh.getRange(1, hc + 1).clearContent();
     try { sh.getRange(1, hc, 1, hc + 1).merge(); } catch (eMg) {}
   }
+
+  // A1 nogmaals leeg (merge mag dit niet vullen)
+  sh.getRange(1, 1).clearContent();
+  try { if (sh.getMaxRows() >= 2) sh.hideRows(2); } catch (eH2) {}
 }
 
 
@@ -1897,6 +1905,52 @@ function herstelWedstrijdenVoet_(ss) {
   sh.getRange(tafel, 1, tafel + 2, 1).setFontWeight('bold');
   sh.getRange(tafel, 1, tafel + 2, lastCol).setBackground(null);
   clearValidationsHard_(sh.getRange(totRow, 2, tafel + 2, lastCol));
+}
+
+function importWedstrijdenPlayerAtt_(sh, p, firstPlayerRow, lastPlayerRow, nMatch) {
+  if (!sh || !p || !p.match_att) return;
+  var lastCol = sh.getLastColumn();
+  if (lastCol < 2 || lastPlayerRow < firstPlayerRow) return;
+  var headers = sh.getRange(1, 2, 1, lastCol).getDisplayValues()[0];
+  var matchCols = [];
+  var mi = 0;
+  for (var c = 0; c < headers.length && matchCols.length < nMatch; ) {
+    var h = String(headers[c] || '').trim();
+    if (!h) {
+      if (c + 1 < headers.length) {
+        matchCols.push({ aanCol: c + 2, gesCol: c + 3, idx: mi });
+        mi++;
+        c += 2;
+        continue;
+      }
+      c++;
+      continue;
+    }
+    var idx = findMatchIndex_(h, p.matches || [], mi);
+    matchCols.push({ aanCol: c + 2, gesCol: c + 3, idx: idx >= 0 ? idx : mi });
+    mi++;
+    c += 2;
+  }
+  var names = sh.getRange(firstPlayerRow, 1, lastPlayerRow, 1).getDisplayValues();
+  for (var r = 0; r < names.length; r++) {
+    var name = String(names[r][0] || '').trim();
+    if (!name || name === 'Totaal') continue;
+    if (p.rename && p.rename[name]) {
+      sh.getRange(firstPlayerRow + r, 1).setValue(p.rename[name]);
+      name = p.rename[name];
+    }
+    var pairs = p.match_att[name];
+    if (!pairs) continue;
+    for (var j = 0; j < matchCols.length; j++) {
+      var mc = matchCols[j];
+      var ix = mc.idx >= 0 ? mc.idx : j;
+      if (ix < 0 || ix >= pairs.length) continue;
+      var aan = toJaNee_(pairs[ix][0]);
+      sh.getRange(firstPlayerRow + r, mc.aanCol).setValue(aan);
+      var ges = String(pairs[ix][1] || '').trim();
+      if (ges) sh.getRange(firstPlayerRow + r, mc.gesCol).setValue(toCheckboxBool_(ges));
+    }
+  }
 }
 
 function importWedstrijden_(ss, p) {
