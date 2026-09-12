@@ -1,23 +1,14 @@
 /**
  * Plak dit in de AANWEZIGHEID-spreadsheet:
- * Extensies → Apps Script → nieuw bestand → plak → opslaan.
+ * Extensies → Apps Script → plak in Code.gs → opslaan.
  *
- * Eerste keer: vul in tab Uitleg het veld beheer_sheet_id (alleen het ID,
- * het stuk tussen /d/ en /edit in de Beheer-URL).
- * Run syncAllesVanuitBeheer() eenmaal (rechten toestaan: ook Beheer lezen).
+ * Setup (jij / Academy — niet de coaches):
+ * 1) Tab Uitleg: beheer_sheet_id + vbl_team_guid (VBL-ploegcode, bv. BVBL1125G10  3)
+ * 2) Menu Academy sync → "Eerste setup (auto matchen)" één keer
+ *    → rechten toestaan, matchen binnenhalen, auto-trigger klaarzetten.
+ * Daarna sheet delen met coaches: Wedstrijden staat al vol. Coaches doen niks.
  *
- * Menu "Academy sync":
- * - Alles bijwerken vanuit Beheer (spelers + trainingen + matchen)
- * - Alleen spelers syncen
- *
- * Optioneel (Apps Script-editor): genereerTrainingenUitWeekschema()
- * vult Beheer → Trainingen_data voor de website-kalender (10 weken).
- *
- * Effect van syncAllesVanuitBeheer (simpel voor ouders):
- * - Tab Trainingen + Wedstrijden (Ja/Nee) vanuit Beheer
- * - Bestaande antwoorden blijven bewaard
- * - Geen Spelers_ref / Sessies / tall-tabs meer (ballast)
- * Run opruimOverbodigeTabs_() eenmaal om oude tabs te wissen.
+ * Menu verder alleen voor jou bij onderhoud.
  */
 
 var TZ_ = 'Europe/Brussels';
@@ -42,14 +33,14 @@ function syncAllesVanuitBeheer() {
 
   var sessies = buildSessiesVanuitBeheer_(beheer);
   var trainings = sessies.filter(function (s) { return s.type === 'training'; });
-  // Wedstrijden: VBL (Vlaams-Brabant / Basketbal Vlaanderen) + Beheer-extras
-  var vblMatches = fetchVblMatchSessiesU10C_();
+  var vblMatches = fetchVblMatchSessies_(ss);
   var sheetMatches = sessies.filter(function (s) { return s.type === 'match'; });
   var matches = mergeMatchSessies_(vblMatches, sheetMatches);
 
   var existing = collectAllAttendanceMaps_(ss);
   writeTrainingenMatrix_(ss, players, trainings, existing);
   writeWedstrijdenMatrix_(ss, players, matches, existing);
+  markVblBootstrapped_(ss);
 
   ss.toast(
     players.length + ' spelers · ' + trainings.length + ' trainingen · ' +
@@ -59,10 +50,104 @@ function syncAllesVanuitBeheer() {
   );
 }
 
+/**
+ * Alleen Wedstrijden (VBL + Beheer-extras). Raakt Trainingen NIET aan.
+ * Veilig voor coaches / auto-bootstrap.
+ */
+function syncWedstrijdenVanuitVbl() {
+  var ss = SpreadsheetApp.getActive();
+  var beheer = openBeheer_(ss);
+  var players = readPlayersFromBeheer_(beheer);
+  var sessies = buildSessiesVanuitBeheer_(beheer);
+  var vblMatches = fetchVblMatchSessies_(ss);
+  var sheetMatches = sessies.filter(function (s) { return s.type === 'match'; });
+  var matches = mergeMatchSessies_(vblMatches, sheetMatches);
+  var existing = collectAllAttendanceMaps_(ss);
+  writeWedstrijdenMatrix_(ss, players, matches, existing);
+  markVblBootstrapped_(ss);
+  ss.toast(matches.length + ' wedstrijden uit VBL/Beheer (Trainingen onaangeroerd).', 'Academy sync', 8);
+  return matches.length;
+}
+
 /** Alleen spelers (herbouw matrices met bestaande Sessies-index). */
 function syncSpelersFromBeheer() {
-  // Zelfde bron als volle sync: altijd Beheer (geen Sessies-tab meer nodig)
   syncAllesVanuitBeheer();
+}
+
+/**
+ * Eerste setup voor een nieuwe ploeg-sheet (jij, vóór delen met coaches):
+ * - rechten (Beheer + UrlFetch)
+ * - installable onOpen (auto matchen als Wedstrijden nog leeg)
+ * - meteen 1× VBL-matchen binnenhalen
+ */
+function eersteSetupAutoMatchen() {
+  var ss = SpreadsheetApp.getActive();
+  ensureUitlegVblKey_(ss);
+  installeerAutoOnOpen_();
+  var n = syncWedstrijdenVanuitVbl();
+  ss.toast(
+    'Klaar: ' + n + ' matchen binnen. Sheet mag naar coaches — zij hoeven niks te doen.',
+    'Eerste setup',
+    10
+  );
+}
+
+/** Installable onOpen: menu + bootstrap als Wedstrijden nog leeg. */
+function onOpenInstallable() {
+  onOpen();
+  try {
+    bootstrapVblIndienLeeg_();
+  } catch (e) {
+    // Auth/eerste keer: stil — eersteSetup of menu dekt het
+  }
+}
+
+function bootstrapVblIndienLeeg_() {
+  var ss = SpreadsheetApp.getActive();
+  if (isVblBootstrapped_(ss)) return;
+  if (!readVblTeamGuid_(ss)) return;
+  if (!wedstrijdenIsLeeg_(ss)) {
+    markVblBootstrapped_(ss);
+    return;
+  }
+  syncWedstrijdenVanuitVbl();
+}
+
+function wedstrijdenIsLeeg_(ss) {
+  var sh = ss.getSheetByName(SHEET_WEDSTRIJDEN_);
+  if (!sh) return true;
+  // Layout: R1 headers, R2 sessie_id (verborgen), R3 sub — match-kolommen vanaf B
+  if (sh.getLastColumn() < 3) return true;
+  var idRow = sh.getRange(2, 1, 2, Math.min(sh.getLastColumn(), 40)).getDisplayValues()[0];
+  for (var c = 1; c < idRow.length; c++) {
+    if (/^[tm]-/.test(String(idRow[c] || '').trim())) return false;
+  }
+  // Fallback: headerrij heeft "Match "
+  var h = sh.getRange(1, 2, 1, Math.min(sh.getLastColumn(), 20)).getDisplayValues()[0];
+  for (var i = 0; i < h.length; i++) {
+    if (/^Match\s+\d+/i.test(String(h[i] || ''))) return false;
+  }
+  return true;
+}
+
+function isVblBootstrapped_(ss) {
+  return PropertiesService.getDocumentProperties().getProperty('vbl_bootstrapped') === '1';
+}
+
+function markVblBootstrapped_(ss) {
+  PropertiesService.getDocumentProperties().setProperty('vbl_bootstrapped', '1');
+}
+
+function installeerAutoOnOpen_() {
+  var ss = SpreadsheetApp.getActive();
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'onOpenInstallable') return;
+  }
+  ScriptApp.newTrigger('onOpenInstallable')
+    .forSpreadsheet(ss)
+    .onOpen()
+    .create();
 }
 
 /**
@@ -126,12 +211,14 @@ function genereerTrainingenUitWeekschema() {
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('Academy sync')
-    .addItem('Alles bijwerken vanuit Beheer (spelers + trainingen + matchen)', 'syncAllesVanuitBeheer')
+    .addItem('Eerste setup (auto matchen)', 'eersteSetupAutoMatchen')
+    .addItem('Wedstrijden uit VBL verversen', 'syncWedstrijdenVanuitVbl')
+    .addSeparator()
+    .addItem('Alles bijwerken vanuit Beheer', 'syncAllesVanuitBeheer')
     .addItem('Alleen spelers syncen', 'syncSpelersFromBeheer')
     .addItem('Ja/Nee chips + zachte kleuren', 'styleJaNeeChipsNu')
     .addItem('Herstel Totaal + voetregels', 'herstelTrainingenTotaalEnVoet_')
     .addItem('Opruimen overbodige tabs', 'opruimOverbodigeTabs_')
-    .addItem('Wedstrijden uit VBL verversen', 'syncAllesVanuitBeheer')
     .addToUi();
 }
 
@@ -193,14 +280,45 @@ function writeSpelersRef_(ss, players) {
 // ── Sessies bouwen ───────────────────────────────────────────────────
 
 
-/** U10 C VBL teamguid (twee spaties → ++). */
+/** Fallback als Uitleg nog geen vbl_team_guid heeft (huidige U10 C). */
 var VBL_U10C_GUID_ = 'BVBL1125G10  3';
 var VBL_API_ = 'https://vblcb.wisseq.eu/VBLCB_WebService/data/TeamMatchesByGuid?teamguid=';
 
-/** Haal officiële U10 C-matchen op (Basketbal Vlaanderen). */
+function readVblTeamGuid_(ss) {
+  var uitleg = ss.getSheetByName('Uitleg');
+  if (!uitleg) return '';
+  var g = lookupUitleg_(uitleg, 'vbl_team_guid');
+  return String(g || '').trim();
+}
+
+/** Zorg dat Uitleg een vbl_team_guid-rij heeft (leeg of U10 C default). */
+function ensureUitlegVblKey_(ss) {
+  var uitleg = ss.getSheetByName('Uitleg') || ss.insertSheet('Uitleg');
+  var existing = lookupUitleg_(uitleg, 'vbl_team_guid');
+  if (existing) return existing;
+  var last = Math.max(uitleg.getLastRow(), 0) + 1;
+  // Default alleen zinvol voor huidige U10 C-sheet; andere ploegen vullen jij in
+  var def = VBL_U10C_GUID_;
+  uitleg.getRange(last, 1, last, 2).setValues([['vbl_team_guid', def]]);
+  return def;
+}
+
+/** Officiële matchen via Basketbal Vlaanderen (guid uit Uitleg). */
+function fetchVblMatchSessies_(ss) {
+  var guid = readVblTeamGuid_(ss) || VBL_U10C_GUID_;
+  return fetchVblMatchSessiesForGuid_(guid);
+}
+
+/** @deprecated alias */
 function fetchVblMatchSessiesU10C_() {
+  return fetchVblMatchSessies_(SpreadsheetApp.getActive());
+}
+
+function fetchVblMatchSessiesForGuid_(guid) {
   try {
-    var enc = String(VBL_U10C_GUID_).replace(/ +/g, '++');
+    guid = String(guid || '').trim();
+    if (!guid) return [];
+    var enc = guid.replace(/ +/g, '++');
     var res = UrlFetchApp.fetch(VBL_API_ + enc, {
       muteHttpExceptions: true,
       followRedirects: true
@@ -210,11 +328,11 @@ function fetchVblMatchSessiesU10C_() {
     if (!data || !data.length) return [];
     var out = [];
     for (var i = 0; i < data.length; i++) {
-      var s = parseVblRawToSessie_(data[i], VBL_U10C_GUID_);
+      var s = parseVblRawToSessie_(data[i], guid);
       if (s) out.push(s);
     }
     out.sort(function (a, b) {
-      return String(a.datum).localeCompare(String(b.datum)) || String(a.uur).localeCompare(String(b.uur));
+      return String(a.datum).localeCompare(String(b.datum)) || String(a.uur || '').localeCompare(String(b.uur || ''));
     });
     return out;
   } catch (e) {

@@ -25,35 +25,35 @@ Doel: **jij vult Beheer in**, ouders vullen alleen **Aanwezigheid** (tabs **Trai
 Nummer + voornaam volstaat. Dropdowns (look/emoji) staan klaar; `random` = de site kiest.
 
 ### Trainingen + Matchen — tip (aanwezigheid)
-- **Trainingen:** vul `Trainingen_week`. Sync maakt sessies voor ouders (10 weken vooruit). Uitzondering? Zet die dag in `Trainingen_data` (`status=nee` = afgelast, of ander uur/zaal). Layout = Training 1/2… + datum + **Ja/Nee** (groen/rood), zoals het oude U10 C-blad.  
-- **Wedstrijden waarvoor je aanwezigheid wil:** zet ze in Beheer → **Matchen** (ook als het een VBL-wedstrijd is, mag een korte rij). Daarna sync.  
-- Officiële VBL-kalender op de site ≠ automatisch aanwezigheidsrij. Wil je J/N/? voor een VBL-match → korte rij in Matchen + sync.
+- **Trainingen:** vul `Trainingen_week`. Sync maakt sessies voor ouders (10 weken vooruit). Uitzondering? Zet die dag in `Trainingen_data` (`status=nee` = afgelast, of ander uur/zaal).  
+- **Wedstrijden:** officiële VBL-matchen komen **automatisch** binnen via `vbl_team_guid` in Uitleg (zie setup hieronder). Extra/tornooi? Zet een korte rij in Beheer → **Matchen**.  
+- Coaches hoeven matchen **niet** manueel over te typen.
 
 ## Aanwezigheid — voor ouders
 
 Layout zoals het oude U10 C-blad: **één rij per kind**, kolommen = trainingen/matchen.
 
-1. Tab **Lees_mij** / **Uitleg**: plak `beheer_sheet_id`.  
-2. Tab **Trainingen**: kies **Ja** of **Nee** bij jouw kind (groen/rood; leeg = grijs).  
-3. Tab **Wedstrijden**: per match **Kan aanwezig zijn** (ouders) + **Heeft gespeeld** (coach na de match).  
-4. Spelers **niet** hier toevoegen — dat gebeurt in Beheer → Spelers.  
-5. Sessies **niet** manueel typen — menu **Academy sync → Alles bijwerken**.
+1. Tab **Trainingen**: **Ja** / **Nee** bij jouw kind.  
+2. Tab **Wedstrijden**: per match aanwezig / gespeeld.  
+3. Spelers of matchen **niet** hier toevoegen.
 
-## Installatie sync (1× door coach / beheerder)
+## Installatie (1× door jou / Academy — vóór delen met coaches)
 
 In de **Aanwezigheid**-spreadsheet:
 
-1. Vul in tab **Uitleg** het veld `beheer_sheet_id` (stuk tussen `/d/` en `/edit` in de Beheer-URL).  
+1. Tab **Uitleg**: `beheer_sheet_id` + **`vbl_team_guid`** (VBL-ploegcode, bv. `BVBL1125G10  3` voor U10 C — spaties laten staan).  
 2. Extensies → Apps Script → plak `apps-script/syncSpelersFromBeheer.gs` → opslaan.  
-3. Run **`syncAllesVanuitBeheer`** eenmaal (rechten toestaan: Beheer mag gelezen worden).  
-4. Herlaad de sheet → menu **Academy sync** verschijnt.
+3. Menu **Academy sync → Eerste setup (auto matchen)** één keer (rechten toestaan).  
+   → haalt alle VBL-matchen binnen, zet auto-trigger klaar.  
+4. Deel daarna met coaches/ouders. **Coaches doen verder niks** voor de kalender.
 
-### Menu Academy sync
-- **Alles bijwerken vanuit Beheer (spelers + trainingen + matchen)** → `syncAllesVanuitBeheer()`  
-- **Alleen spelers syncen** → `syncSpelersFromBeheer()`  
-- **Opruimen overbodige tabs** → `opruimOverbodigeTabs_()` (houdt Trainingen/Wedstrijden/Uitleg)
+### Menu Academy sync (onderhoud)
+- **Eerste setup (auto matchen)** → `eersteSetupAutoMatchen()`  
+- **Wedstrijden uit VBL verversen** → `syncWedstrijdenVanuitVbl()` (raakt Trainingen niet)  
+- **Alles bijwerken vanuit Beheer** → `syncAllesVanuitBeheer()`  
+- **Opruimen overbodige tabs** → alleen Trainingen/Wedstrijden/Uitleg
 
-Bestaande vinkjes blijven staan (ook na migratie van de oude matrix); alleen nieuwe sessies/spelers komen erbij.
+Bestaande vinkjes blijven staan; VBL-verversen wijzigt Trainingen niet.
 
 ### Optioneel: Trainingen_data vullen voor de website
 In de Apps Script-editor: run **`genereerTrainingenUitWeekschema()`**.  
