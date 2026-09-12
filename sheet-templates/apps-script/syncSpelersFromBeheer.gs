@@ -766,8 +766,7 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
   var nMatch = visible.length;
   var nCols = 1 + nMatch * 2 + 1;
 
-  // Geen merges — vermijdt "samengevoegd bereik"-crash in Sheets.
-  // Headertekst staat in de "Kan aanwezig"-kolom; "Heeft gespeeld"-kolom blijft leeg in R1.
+  // Headers eerst zonder merge; merge B1:C1 / D1:E1 … pas helemaal op het eind.
   var headerRow = ['Naam'];
   var idRow = ['sessie_id'];
   var subRow = [''];
@@ -896,6 +895,27 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
       applyCheckboxesPlain_(gesRange);
     }
     try { clearValidationsHard_(sh.getRange(totRowNum, 2, tafelW + 2, nCols)); } catch (eV2) {}
+  }
+
+  // Kolom A: nooit merge/checkbox (Sheets bug liet A1:A3 + vinkje staan)
+  try { sh.getRange(1, 1, 3, 1).breakApart(); } catch (eA) {}
+  try { sh.getRange(1, 1, lastPlayerRow + 5, 1).removeCheckboxes(); } catch (eAc) {}
+  sh.getRange(1, 1).setValue('Naam').setFontWeight('bold');
+  sh.getRange(2, 1).setValue('sessie_id');
+  sh.getRange(3, 1).setValue('');
+
+  // Rij 1: merge per match (B1:C1, D1:E1, …) — helemaal op het eind
+  for (var hm = 0; hm < nMatch; hm++) {
+    var hc = 2 + hm * 2;
+    var hLabel = String(headerRow[1 + hm * 2] || ('Match ' + (hm + 1)));
+    try { sh.getRange(1, hc, 1, hc + 1).breakApart(); } catch (eBr) {}
+    sh.getRange(1, hc).setValue(hLabel)
+      .setFontWeight('bold')
+      .setWrap(true)
+      .setVerticalAlignment('middle')
+      .setHorizontalAlignment('center');
+    sh.getRange(1, hc + 1).setValue('');
+    try { sh.getRange(1, hc, 1, hc + 1).merge(); } catch (eMg) {}
   }
 }
 
@@ -1297,14 +1317,23 @@ function styleMatrixHeader_(sh, nCols, rowHeight) {
 }
 
 function resetSheet_(sh) {
+  try { sh.setFrozenColumns(0); sh.setFrozenRows(0); } catch (e3) {}
+  try {
+    var merges = sh.getRange(1, 1, sh.getMaxRows(), sh.getMaxColumns()).getMergedRanges();
+    for (var i = 0; i < merges.length; i++) {
+      try { merges[i].breakApart(); } catch (eB) {}
+    }
+  } catch (e) {}
+  try { sh.getRange(1, 1, Math.min(sh.getMaxRows(), 50), Math.min(sh.getMaxColumns(), 80)).breakApart(); } catch (eA) {}
   sh.clear();
   sh.clearConditionalFormatRules();
   try {
-    var merges = sh.getRange(1, 1, sh.getMaxRows(), sh.getMaxColumns()).getMergedRanges();
-    for (var i = 0; i < merges.length; i++) merges[i].breakApart();
-  } catch (e) {}
-  try { sh.showRows(1, Math.max(sh.getMaxRows(), 3)); } catch (e2) {}
-  try { sh.setFrozenColumns(0); sh.setFrozenRows(0); } catch (e3) {}
+    var merges2 = sh.getRange(1, 1, sh.getMaxRows(), sh.getMaxColumns()).getMergedRanges();
+    for (var j = 0; j < merges2.length; j++) {
+      try { merges2[j].breakApart(); } catch (eB2) {}
+    }
+  } catch (e2) {}
+  try { sh.showRows(1, Math.max(sh.getMaxRows(), 3)); } catch (eShow) {}
 }
 
 
