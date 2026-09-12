@@ -370,32 +370,36 @@ function parseVblRawToSessie_(raw, ourGuid) {
   };
 }
 
-/** VBL eerst; Beheer alleen echte extras (andere dag of duidelijk andere wedstrijd). */
+/** VBL wint: als VBL matchen heeft, negeer Beheer-matchen (voorkomt dubbels). */
 function mergeMatchSessies_(vbl, sheet) {
+  var list = (vbl && vbl.length) ? vbl.slice() : (sheet || []).slice();
+  var seen = {};
   var out = [];
-  var seenDay = {};
-  (vbl || []).forEach(function (s) {
+  for (var i = 0; i < list.length; i++) {
+    var s = list[i];
+    var day = normalizeIsoDate_(s.datum);
+    var uur = String(s.uur || '').replace('.', ':');
+    var key = day + '|' + uur;
+    if (day && seen[key]) continue;
+    if (day) seen[key] = true;
+    if (day) s.datum = day;
     out.push(s);
-    var day = String(s.datum || '');
-    if (day) seenDay[day] = true;
-  });
-  (sheet || []).forEach(function (s) {
-    var day = String(s.datum || '');
-    // Zelfde dag als VBL = bijna altijd duplicaat (andere id/schrijfwijze)
-    if (day && seenDay[day]) return;
-    var id = String(s.sessie_id || '');
-    if (!id) return;
-    var dup = false;
-    for (var i = 0; i < out.length; i++) {
-      if (String(out[i].sessie_id || '') === id) { dup = true; break; }
-    }
-    if (dup) return;
-    out.push(s);
-    if (day) seenDay[day] = true;
-  });
+  }
   return out.sort(function (a, b) {
     return String(a.datum).localeCompare(String(b.datum)) || String(a.uur || '').localeCompare(String(b.uur || ''));
   });
+}
+
+function normalizeIsoDate_(v) {
+  if (v instanceof Date && !isNaN(v.getTime())) {
+    return Utilities.formatDate(v, 'Europe/Brussels', 'yyyy-MM-dd');
+  }
+  var s = String(v || '').trim();
+  var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return m[1] + '-' + m[2] + '-' + m[3];
+  m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (m) return m[3] + '-' + pad2_(m[2]) + '-' + pad2_(m[1]);
+  return s;
 }
 
 function buildSessiesVanuitBeheer_(beheer) {
@@ -821,18 +825,7 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
   for (var t = 0; t < nMatch * 2; t++) totalRow.push('');
   totalRow.push('');
 
-  // Geen deleteSheet (geeft "onbekende fout"). Wel agressief unmergen + clear.
   resetSheet_(sh);
-  try {
-    var maxR = Math.min(sh.getMaxRows(), 60);
-    var maxC = Math.min(sh.getMaxColumns(), 60);
-    var merges = sh.getRange(1, 1, maxR, maxC).getMergedRanges();
-    for (var mi = 0; mi < merges.length; mi++) {
-      try { merges[mi].breakApart(); } catch (eM) {}
-    }
-    sh.getRange(1, 1, maxR, maxC).breakApart();
-  } catch (eU) {}
-  SpreadsheetApp.flush();
 
   var all = [headerRow, idRow, subRow].concat(dataRows);
   if (sorted.length) all.push(totalRow);
@@ -860,17 +853,20 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
 
   try { importWedstrijdenPlayerAtt_(sh, HERSTEL_PAYLOAD_, firstPlayerRow, lastPlayerRow, nMatch); } catch (eImp) {}
 
+  var aanRanges = [];
   if (sorted.length && nMatch > 0) {
     for (var mk = 0; mk < nMatch; mk++) {
       var aanCol = 2 + mk * 2;
       var gesCol = 3 + mk * 2;
       var aanRange = sh.getRange(firstPlayerRow, aanCol, lastPlayerRow, aanCol);
       var gesRange = sh.getRange(firstPlayerRow, gesCol, lastPlayerRow, gesCol);
-      try { aanRange.removeCheckboxes(); } catch (eCb) {}
-      try { aanRange.clearDataValidations(); } catch (eDv) {}
-      applyJaNeeValidation_(aanRange);
+      var aanVals = aanRange.getValues();
+      for (var ar = 0; ar < aanVals.length; ar++) aanVals[ar][0] = toJaNee_(aanVals[ar][0]);
+      aanRange.setValues(aanVals);
+      aanRanges.push(aanRange);
       applyCheckboxesPlain_(gesRange);
     }
+    styleJaNeeRanges_(aanRanges);
   }
 
   sh.getRange(1, 1).clearContent().setFontWeight('normal').setFontSize(10);
@@ -913,7 +909,7 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
     .setFontWeight('normal').setFontSize(9).setFontColor('#666666')
     .setWrap(true).setHorizontalAlignment('center');
 
-  // Headers: GEEN merge (merge crashte sync). Label in aanwezig-kolom, gespeeld-kolom leeg.
+  // GEEN merge — labels in aanwezig-kolom
   sh.getRange(1, 1).clearContent().setFontWeight('normal');
   for (var hm = 0; hm < nMatch; hm++) {
     var hc = 2 + hm * 2;
@@ -953,6 +949,7 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
     sh.getRange(totRowNum, 1).setValue('Totaal').setFontWeight('bold');
   }
 }
+
 
 
 
@@ -1006,6 +1003,42 @@ function applyJaNeeValidation_(range) {
  * Chip-dropdowns (pill-knoppen) + zachte CF. Waarden blijven intact.
  * Probeert Sheets API displayStyle=CHIP; valt terug op gewone dropdown.
  */
+
+/** Één keer CF + dropdown voor meerdere Ja/Nee-bereiken (voorkomt quota/unknown errors). */
+function styleJaNeeRanges_(ranges) {
+  if (!ranges || !ranges.length) return;
+  var sheet = ranges[0].getSheet();
+  var rule = SpreadsheetApp.newDataValidation()
+    .requireValueInList(['Ja', 'Nee'], true)
+    .setAllowInvalid(true)
+    .setHelpText('Ja of Nee')
+    .build();
+  for (var i = 0; i < ranges.length; i++) {
+    try { clearValidationsHard_(ranges[i]); } catch (eC) {}
+    ranges[i].setDataValidation(rule);
+    ranges[i].setHorizontalAlignment('center').setVerticalAlignment('middle').setFontWeight('bold');
+  }
+  var existing = sheet.getConditionalFormatRules() || [];
+  existing.push(SpreadsheetApp.newConditionalFormatRule()
+    .whenTextEqualTo('Ja')
+    .setBackground(JA_NEE_COLORS_.jaBg)
+    .setFontColor(JA_NEE_COLORS_.jaFg)
+    .setRanges(ranges)
+    .build());
+  existing.push(SpreadsheetApp.newConditionalFormatRule()
+    .whenTextEqualTo('Nee')
+    .setBackground(JA_NEE_COLORS_.neeBg)
+    .setFontColor(JA_NEE_COLORS_.neeFg)
+    .setRanges(ranges)
+    .build());
+  existing.push(SpreadsheetApp.newConditionalFormatRule()
+    .whenCellEmpty()
+    .setBackground(JA_NEE_COLORS_.leegBg)
+    .setRanges(ranges)
+    .build());
+  sheet.setConditionalFormatRules(existing);
+}
+
 function styleJaNeeRange_(range) {
   clearValidationsHard_(range);
 
