@@ -563,7 +563,7 @@ function writeTrainingenMatrix_(ss, players, trainings, existing) {
     for (var c = 0; c < nSess; c++) {
       var colLetter = colToLetter_(2 + c);
       sh.getRange(totRowNum, 2 + c).setFormula(
-        '=COUNTIF(' + colLetter + firstPlayerRow + ':' + colLetter + lastPlayerRow + ';"Ja")'
+        totaalJaFormula_(colLetter, firstPlayerRow, lastPlayerRow)
       );
     }
   }
@@ -736,6 +736,14 @@ function styleJaNeeChipsNu() {
  * Alleen Totaal-formules + voetregels zonder dropdown (Trainingen).
  * Menu: Academy sync → Herstel Totaal + voetregels.
  */
+
+/** Totaal-cel: tel Ja's; leeg als de kolom nog helemaal leeg is (geen Ja/Nee). */
+function totaalJaFormula_(colLetter, firstRow, lastRow) {
+  var rng = colLetter + firstRow + ':' + colLetter + lastRow;
+  // NL-BE locale: ; als scheidingsteken
+  return '=IF(COUNTIF(' + rng + ';"Ja")+COUNTIF(' + rng + ';"Nee")=0;"";COUNTIF(' + rng + ';"Ja"))';
+}
+
 function herstelTrainingenTotaalEnVoet_() {
   var ss = SpreadsheetApp.getActive();
   var sh = ss.getSheetByName(SHEET_TRAININGEN_);
@@ -770,7 +778,7 @@ function herstelTrainingenTotaalEnVoet_() {
     for (var c = 2; c <= endCol; c++) {
       var colLetter = colToLetter_(c);
       sh.getRange(totRow, c).setFormula(
-        '=COUNTIF(' + colLetter + firstPlayer + ':' + colLetter + lastPlayer + ';"Ja")'
+        totaalJaFormula_(colLetter, firstPlayer, lastPlayer)
       );
     }
     // Totaal-kolom rechts voor spelers (als header Totaal)
