@@ -150,6 +150,7 @@ function onOpen() {
     .addItem('Alles bijwerken vanuit Beheer (spelers + trainingen + matchen)', 'syncAllesVanuitBeheer')
     .addItem('Alleen spelers syncen', 'syncSpelersFromBeheer')
     .addItem('Ja/Nee chips + zachte kleuren', 'styleJaNeeChipsNu')
+    .addItem('Herstel Totaal + voetregels', 'herstelTrainingenTotaalEnVoet_')
     .addToUi();
 }
 
@@ -552,7 +553,7 @@ function writeTrainingenMatrix_(ss, players, trainings, existing) {
     var rowNum = firstPlayerRow + r;
     if (nSess > 0) {
       sh.getRange(rowNum, nCols).setFormula(
-        '=COUNTIF(' + colToLetter_(2) + rowNum + ':' + colToLetter_(1 + nSess) + rowNum + ',"Ja")'
+        '=COUNTIF(' + colToLetter_(2) + rowNum + ':' + colToLetter_(1 + nSess) + rowNum + ';"Ja")'
       );
     } else {
       sh.getRange(rowNum, nCols).setValue(0);
@@ -562,7 +563,7 @@ function writeTrainingenMatrix_(ss, players, trainings, existing) {
     for (var c = 0; c < nSess; c++) {
       var colLetter = colToLetter_(2 + c);
       sh.getRange(totRowNum, 2 + c).setFormula(
-        '=COUNTIF(' + colLetter + firstPlayerRow + ':' + colLetter + lastPlayerRow + ',"Ja")'
+        '=COUNTIF(' + colLetter + firstPlayerRow + ':' + colLetter + lastPlayerRow + ';"Ja")'
       );
     }
   }
@@ -726,40 +727,152 @@ function styleJaNeeChipsNu() {
   var n = 0;
   n += styleJaNeeOnSheet_(ss.getSheetByName(SHEET_TRAININGEN_), 4);
   n += styleJaNeeOnSheet_(ss.getSheetByName(SHEET_WEDSTRIJDEN_), 4);
-  ss.toast('Ja/Nee gestyled op ' + n + ' celbereik(en).', 'Academy sync', 6);
+  // Altijd Totaal + voetregels herstellen (geen dropdowns onder spelers)
+  herstelTrainingenTotaalEnVoet_();
+  ss.toast('Ja/Nee gestyled op ' + n + ' bereik(en); Totaal/voetregels hersteld.', 'Academy sync', 6);
+}
+
+/**
+ * Alleen Totaal-formules + voetregels zonder dropdown (Trainingen).
+ * Menu: Academy sync → Herstel Totaal + voetregels.
+ */
+function herstelTrainingenTotaalEnVoet_() {
+  var ss = SpreadsheetApp.getActive();
+  var sh = ss.getSheetByName(SHEET_TRAININGEN_);
+  if (!sh) {
+    ss.toast('Tab Trainingen ontbreekt', 'Academy sync', 5);
+    return;
+  }
+  var meta = findTrainingenPlayerBlock_(sh, 4);
+  if (!meta) {
+    ss.toast('Geen spelersrijen gevonden', 'Academy sync', 5);
+    return;
+  }
+  var firstPlayer = meta.firstPlayer;
+  var lastPlayer = meta.lastPlayer;
+  var totRow = meta.totRow;
+  var endCol = meta.endCol;
+  var nCols = sh.getLastColumn();
+  var lastRow = Math.max(sh.getLastRow(), totRow + 5);
+
+  // Alles vanaf Totaal: geen Ja/Nee-dropdown, geen checkbox
+  if (totRow > 0) {
+    var below = sh.getRange(totRow, 2, lastRow, Math.max(endCol, nCols));
+    below.clearDataValidations();
+    try { below.removeCheckboxes(); } catch (e) {}
+    // Wis per ongeluk geplakte Ja/Nee op Totaal/voet (formules komen terug)
+    sh.getRange(totRow, 2, totRow, endCol).clearContent();
+  }
+
+  // Totaal-rij: COUNTIF Ja per kolom
+  if (totRow > 0 && lastPlayer >= firstPlayer && endCol >= 2) {
+    sh.getRange(totRow, 1).setValue('Totaal').setFontWeight('bold');
+    for (var c = 2; c <= endCol; c++) {
+      var colLetter = colToLetter_(c);
+      sh.getRange(totRow, c).setFormula(
+        '=COUNTIF(' + colLetter + firstPlayer + ':' + colLetter + lastPlayer + ';"Ja")'
+      );
+    }
+    // Totaal-kolom rechts voor spelers (als header Totaal)
+    var header = String(sh.getRange(1, nCols).getDisplayValue() || '').toLowerCase();
+    if (header.indexOf('totaal') >= 0) {
+      for (var r = firstPlayer; r <= lastPlayer; r++) {
+        sh.getRange(r, nCols).setFormula(
+          '=COUNTIF(' + colToLetter_(2) + r + ':' + colToLetter_(endCol) + r + ';"Ja")'
+        );
+      }
+      sh.getRange(totRow, nCols).clearContent();
+    }
+  }
+
+  // Voetregels: labels + grijs, geen validatie
+  var blankRow = totRow > 0 ? totRow + 1 : lastPlayer + 1;
+  var tafelRow = blankRow + 1;
+  // Ensure labels
+  sh.getRange(blankRow, 1).setValue('');
+  sh.getRange(tafelRow, 1).setValue('Tafel');
+  sh.getRange(tafelRow + 1, 1).setValue('Truitjes en fruitje');
+  sh.getRange(tafelRow + 2, 1).setValue('Afspraken zie apart blad');
+  sh.getRange(tafelRow, 1, tafelRow + 2, 1).setFontWeight('bold');
+  var footEndCol = Math.max(endCol, nCols);
+  sh.getRange(tafelRow, 1, tafelRow + 2, footEndCol).setBackground('#F5F5F5');
+  // Clear any leftover validation/content in helper value cells (keep labels)
+  sh.getRange(blankRow, 2, tafelRow + 2, footEndCol).clearContent();
+  sh.getRange(blankRow, 2, tafelRow + 2, footEndCol).clearDataValidations();
+  try { sh.getRange(blankRow, 2, tafelRow + 2, footEndCol).removeCheckboxes(); } catch (e2) {}
+
+  // Spelers-rijen opnieuw zacht stylen (zonder Totaal)
+  if (lastPlayer >= firstPlayer && endCol >= 2) {
+    sh.clearConditionalFormatRules();
+    styleJaNeeRange_(sh.getRange(firstPlayer, 2, lastPlayer, endCol));
+  }
+
+  ss.toast('Totaal telt Ja’s; voetregels zonder dropdown.', 'Academy sync', 6);
 }
 
 function styleJaNeeOnSheet_(sh, firstPlayerRow) {
   if (!sh) return 0;
-  var lastRow = sh.getLastRow();
-  var lastCol = sh.getLastColumn();
-  if (lastRow < firstPlayerRow || lastCol < 2) return 0;
-
-  // Find last player row (before Totaal / helpers)
-  var names = sh.getRange(firstPlayerRow, 1, lastRow, 1).getDisplayValues();
-  var lastPlayer = firstPlayerRow - 1;
-  for (var i = 0; i < names.length; i++) {
-    var n = String(names[i][0] || '').trim();
-    if (!n) break;
-    if (n === 'Totaal' || n.indexOf('Tafel') === 0 || n.indexOf('Truitjes') === 0 || n.indexOf('Afspraken') === 0) break;
-    lastPlayer = firstPlayerRow + i;
-  }
-  if (lastPlayer < firstPlayerRow) return 0;
-
-  // Session cols: B .. lastCol-1 if last is Totaal, else B..lastCol
-  var endCol = lastCol;
-  var header = String(sh.getRange(1, lastCol).getDisplayValue() || '').toLowerCase();
-  if (header.indexOf('totaal') >= 0) endCol = lastCol - 1;
-  if (endCol < 2) return 0;
-
-  var range = sh.getRange(firstPlayerRow, 2, lastPlayer, endCol);
-  // Soft CF: clear previous conditional rules on sheet then re-apply only for this
-  // (Wedstrijden+Trainingen both call this — second call would duplicate.
-  //  Clear all CF once per sheet here.)
+  var meta = findTrainingenPlayerBlock_(sh, firstPlayerRow);
+  if (!meta) return 0;
+  var range = sh.getRange(meta.firstPlayer, 2, meta.lastPlayer, meta.endCol);
   sh.clearConditionalFormatRules();
   styleJaNeeRange_(range);
+  // Extra veilig: geen validatie onder spelers
+  var lastRow = Math.max(sh.getLastRow(), meta.lastPlayer + 6);
+  var nCols = sh.getLastColumn();
+  if (meta.lastPlayer + 1 <= lastRow && nCols >= 2) {
+    var below = sh.getRange(meta.lastPlayer + 1, 2, lastRow, nCols);
+    below.clearDataValidations();
+    try { below.removeCheckboxes(); } catch (e) {}
+  }
   return 1;
 }
+
+/** Spelerblok + Totaal-rij + eindkolom (zonder Totaal-kolom rechts). */
+function findTrainingenPlayerBlock_(sh, firstPlayerRow) {
+  var lastRow = sh.getLastRow();
+  var lastCol = sh.getLastColumn();
+  if (lastRow < firstPlayerRow || lastCol < 2) return null;
+
+  var names = sh.getRange(firstPlayerRow, 1, lastRow, 1).getDisplayValues();
+  var lastPlayer = firstPlayerRow - 1;
+  var totRow = 0;
+  for (var i = 0; i < names.length; i++) {
+    var n = String(names[i][0] || '').trim();
+    if (n === 'Totaal' || n.toLowerCase() === 'total') {
+      totRow = firstPlayerRow + i;
+      break;
+    }
+    if (!n) {
+      // lege rij: stop spelers, zoek Totaal verder
+      for (var j = i + 1; j < names.length; j++) {
+        var n2 = String(names[j][0] || '').trim();
+        if (n2 === 'Totaal' || n2.toLowerCase() === 'total') {
+          totRow = firstPlayerRow + j;
+          break;
+        }
+        if (n2) break;
+      }
+      break;
+    }
+    if (n.indexOf('Tafel') === 0 || n.indexOf('Truitjes') === 0 || n.indexOf('Afspraken') === 0) break;
+    lastPlayer = firstPlayerRow + i;
+  }
+  if (lastPlayer < firstPlayerRow) return null;
+  if (!totRow) totRow = lastPlayer + 1;
+
+  var endCol = lastCol;
+  var header = String(sh.getRange(1, lastCol).getDisplayValue() || '').toLowerCase();
+  if (header.indexOf('totaal') >= 0 || header.indexOf('total') >= 0) endCol = lastCol - 1;
+  if (endCol < 2) return null;
+  return {
+    firstPlayer: firstPlayerRow,
+    lastPlayer: lastPlayer,
+    totRow: totRow,
+    endCol: endCol
+  };
+}
+
 
 
 function matchHeaderLabel_(s) {
