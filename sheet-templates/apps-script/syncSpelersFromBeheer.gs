@@ -64,6 +64,7 @@ function syncWedstrijdenVanuitVbl() {
   var matches = mergeMatchSessies_(vblMatches, sheetMatches);
   var existing = collectAllAttendanceMaps_(ss);
   writeWedstrijdenMatrix_(ss, players, matches, existing);
+  try { importWedstrijden_(ss, HERSTEL_PAYLOAD_); } catch (eImp) {}
   markVblBootstrapped_(ss);
   ss.toast(matches.length + ' wedstrijden uit VBL/Beheer (Trainingen onaangeroerd).', 'Academy sync', 8);
   return matches.length;
@@ -785,7 +786,8 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
     var keys = playerMatchKeys_(player);
     for (var s = 0; s < nMatch; s++) {
       var sid = String(visible[s].sessie_id || '');
-      row.push(toCheckboxBool_(lookupAtt_(existing, keys, sid, 'aan')));
+      // Origineel: Ja/Nee dropdown aanwezig · checkbox gespeeld
+      row.push(toJaNee_(lookupAtt_(existing, keys, sid, 'aan')));
       row.push(toCheckboxBool_(lookupAtt_(existing, keys, sid, 'gespeeld')));
     }
     row.push('');
@@ -808,6 +810,8 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
 
   var firstPlayerRow = 4;
   var lastPlayerRow = 3 + sorted.length;
+  var totRowNum = sorted.length ? lastPlayerRow + 1 : 0;
+
   for (var r = 0; r < sorted.length; r++) {
     var rn = firstPlayerRow + r;
     if (nMatch > 0) {
@@ -822,55 +826,66 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
   }
 
   if (sorted.length && nMatch > 0) {
-    var totRowNum = lastPlayerRow + 1;
-    for (var c = 0; c < nMatch * 2; c++) {
-      var colLetter = colToLetter_(2 + c);
-      sh.getRange(totRowNum, 2 + c).setFormula(
-        '=COUNTIF(' + colLetter + firstPlayerRow + ':' + colLetter + lastPlayerRow + ';TRUE)'
+    for (var c = 0; c < nMatch; c++) {
+      var aanL = colToLetter_(2 + c * 2);
+      var gesL = colToLetter_(3 + c * 2);
+      // Aanwezig: tel Ja (leeg als nog geen Ja/Nee)
+      sh.getRange(totRowNum, 2 + c * 2).setFormula(
+        totaalJaFormula_(aanL, firstPlayerRow, lastPlayerRow)
+      );
+      // Gespeeld: tel TRUE-vinkjes
+      sh.getRange(totRowNum, 3 + c * 2).setFormula(
+        '=COUNTIF(' + gesL + firstPlayerRow + ':' + gesL + lastPlayerRow + ';TRUE)'
       );
     }
   }
 
-  // Voetregels
+  // Voetregels zoals origineel
   var blankW = lastPlayerRow + 2;
   var tafelW = blankW + 1;
   sh.getRange(blankW, 1).setValue('');
   sh.getRange(tafelW, 1).setValue('Tafel');
   sh.getRange(tafelW + 1, 1).setValue('Truitjes');
   sh.getRange(tafelW + 2, 1).setValue('Afspraken zie apart blad');
-  sh.getRange(tafelW + 2, 1).setFontColor('#990000');
+  sh.getRange(tafelW + 2, 1).setFontColor('#990000').setFontWeight('bold');
   for (var fi = 0; fi < nMatch; fi++) {
     var cAan = 2 + fi * 2;
-    sh.getRange(tafelW, cAan).setValue('Naam');
-    sh.getRange(tafelW + 1, cAan).setValue('Naam (#nummer)');
+    sh.getRange(tafelW, cAan, tafelW, cAan + 1).merge().setValue('Naam');
+    sh.getRange(tafelW + 1, cAan, tafelW + 1, cAan + 1).merge().setValue('Naam (#nummer)');
   }
-  sh.getRange(tafelW, 1, tafelW + 2, 1).setFontWeight('bold');
+  sh.getRange(tafelW, 1, tafelW + 1, 1).setFontWeight('bold');
   sh.getRange(tafelW, 1, tafelW + 2, nCols).setBackground('#F5F5F5');
 
-  // Opmaak: bold match-headers, freeze A, wrap
+  // Opmaak zoals origineel
   sh.getRange(1, 1, 1, nCols)
     .setFontWeight('bold')
     .setWrap(true)
     .setVerticalAlignment('middle')
     .setHorizontalAlignment('center');
-  sh.setRowHeight(1, 72);
-  sh.getRange(3, 1, 3, nCols).setFontWeight('bold').setWrap(true).setHorizontalAlignment('center');
-  if (sorted.length) sh.getRange(lastPlayerRow + 1, 1, lastPlayerRow + 1, nCols).setFontWeight('bold');
-  if (sh.getMaxRows() >= 2) sh.hideRows(2);
+  sh.setRowHeight(1, 78);
+  sh.getRange(3, 1, 3, nCols)
+    .setFontWeight('normal')
+    .setFontSize(9)
+    .setFontColor('#666666')
+    .setWrap(true)
+    .setHorizontalAlignment('center');
+  if (sorted.length) sh.getRange(totRowNum, 1, totRowNum, nCols).setFontWeight('bold');
+  sh.getRange(1, 1).setFontWeight('bold').setFontColor('#000000').setFontSize(10);
+  if (sh.getMaxRows() >= 2) sh.hideRows(2); // sessie_id verborgen
   sh.setFrozenColumns(1);
   sh.setFrozenRows(3);
   sh.setColumnWidth(1, 140);
-  for (var cw = 2; cw < nCols; cw++) sh.setColumnWidth(cw, 88);
+  for (var cw = 2; cw < nCols; cw++) sh.setColumnWidth(cw, 92);
   sh.setColumnWidth(nCols, 90);
 
   if (sorted.length && nMatch > 0) {
     for (var mk = 0; mk < nMatch; mk++) {
       var aanCol = 2 + mk * 2;
       var gesCol = 3 + mk * 2;
-      applyCheckboxesWithSoftColors_(sh.getRange(firstPlayerRow, aanCol, lastPlayerRow, aanCol));
+      applyJaNeeValidation_(sh.getRange(firstPlayerRow, aanCol, lastPlayerRow, aanCol));
       applyCheckboxesPlain_(sh.getRange(firstPlayerRow, gesCol, lastPlayerRow, gesCol));
     }
-    try { clearValidationsHard_(sh.getRange(lastPlayerRow + 1, 2, tafelW + 2, nCols)); } catch (eV2) {}
+    try { clearValidationsHard_(sh.getRange(totRowNum, 2, tafelW + 2, nCols)); } catch (eV2) {}
   }
 }
 
@@ -879,6 +894,13 @@ function formatDateDMyyyy_(iso) {
   var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (!m) return s;
   return String(Number(m[3])) + '-' + String(Number(m[2])) + '-' + m[1];
+}
+
+function formatDateSlashPadded_(iso) {
+  var s = String(iso || '').trim();
+  var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return s;
+  return m[3] + '/' + m[2] + '/' + m[1];
 }
 
 function toJaNee_(v) {
@@ -1235,7 +1257,7 @@ function matchHeaderLabel_(s, index) {
   var lines = [];
   var n = (typeof index === 'number' ? index : 0) + 1;
   lines.push('Match ' + n);
-  var dmy = formatDateDMyyyy_(s.datum); // 27-9-2026
+  var dmy = formatDateSlashPadded_(s.datum); // 27/09/2026 zoals origineel
   var wd = weekdayIndexFromIso_(s.datum);
   var dayName = WEEKDAYS_NL_[wd] || '';
   if (dayName) dayName = dayName.charAt(0).toUpperCase() + dayName.slice(1);
@@ -1427,9 +1449,17 @@ function readWedstrijdenAttendanceMap_(sh) {
     var keys = parsePlayerKeysFromLabel_(name);
     for (var pi = 0; pi < pairs.length; pi++) {
       var p = pairs[pi];
-      var b = toCheckboxBool_(values[r2][p.col]);
-      storePlayerKeys_(map, keys, p.sid, p.field, b);
-      if (p.field === 'aan') storePlayerKeys_(map, keys, p.sid, null, b);
+      var raw = values[r2][p.col];
+      if (p.field === 'aan' || !p.field) {
+        var jn = toJaNee_(raw);
+        if (jn === 'Ja' || jn === 'Nee') {
+          storePlayerKeys_(map, keys, p.sid, p.field || null, jn);
+          storePlayerKeys_(map, keys, p.sid, null, jn);
+        }
+      } else {
+        var b = toCheckboxBool_(raw);
+        storePlayerKeys_(map, keys, p.sid, p.field, b);
+      }
     }
   }
   return map;
