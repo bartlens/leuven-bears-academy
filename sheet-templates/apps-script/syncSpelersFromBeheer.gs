@@ -843,7 +843,8 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
     if (nMatch > 0) {
       var bits = [];
       for (var mj = 0; mj < nMatch; mj++) {
-        bits.push('N(' + colToLetter_(3 + mj * 2) + rn + ')');
+        var gLetter = colToLetter_(3 + mj * 2);
+        bits.push('IF(' + gLetter + rn + ';1;0)');
       }
       sh.getRange(rn, nCols).setFormula('=' + bits.join('+'));
     } else {
@@ -934,8 +935,31 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
   }
   sh.setColumnWidth(nCols, 90);
 
+  // Speler-kolom "Totaal gespeeld": nooit checkboxes (die tonen FALSE)
+  if (sorted.length) {
+    var totColRange = sh.getRange(firstPlayerRow, nCols, lastPlayerRow, nCols);
+    try { totColRange.removeCheckboxes(); } catch (eTotCb) {}
+    try { totColRange.clearDataValidations(); } catch (eTotDv) {}
+    totColRange.clearContent();
+    for (var r2 = 0; r2 < sorted.length; r2++) {
+      var rn2 = firstPlayerRow + r2;
+      if (nMatch > 0) {
+        var bits2 = [];
+        for (var mj2 = 0; mj2 < nMatch; mj2++) {
+          var gl = colToLetter_(3 + mj2 * 2);
+          bits2.push('IF(' + gl + rn2 + ';1;0)');
+        }
+        sh.getRange(rn2, nCols).setFormula('=' + bits2.join('+'));
+      } else {
+        sh.getRange(rn2, nCols).setValue(0);
+      }
+    }
+    totColRange.setHorizontalAlignment('center').setFontWeight('normal');
+  }
+
   if (totRowNum > 0 && nMatch > 0) {
     try { sh.getRange(totRowNum, 2, totRowNum, nCols).removeCheckboxes(); } catch (eTx) {}
+    try { sh.getRange(totRowNum, 2, totRowNum, nCols).clearDataValidations(); } catch (eTd) {}
     for (var tc2 = 0; tc2 < nMatch; tc2++) {
       var aanL3 = colToLetter_(2 + tc2 * 2);
       var gesL3 = colToLetter_(3 + tc2 * 2);
@@ -946,6 +970,9 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
         '=COUNTIF(' + gesL3 + firstPlayerRow + ':' + gesL3 + lastPlayerRow + ';TRUE)'
       );
     }
+    sh.getRange(totRowNum, nCols).setFormula(
+      '=SUM(' + colToLetter_(nCols) + firstPlayerRow + ':' + colToLetter_(nCols) + lastPlayerRow + ')'
+    );
     sh.getRange(totRowNum, 1).setValue('Totaal').setFontWeight('bold');
   }
 }
