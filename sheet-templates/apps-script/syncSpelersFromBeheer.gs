@@ -641,8 +641,7 @@ function applyJaNeeValidation_(range) {
  * Probeert Sheets API displayStyle=CHIP; valt terug op gewone dropdown.
  */
 function styleJaNeeRange_(range) {
-  range.clearDataValidations();
-  try { range.removeCheckboxes(); } catch (e) {}
+  clearValidationsHard_(range);
 
   var chipOk = trySetJaNeeChips_(range);
   if (!chipOk) {
@@ -681,7 +680,35 @@ function styleJaNeeRange_(range) {
 }
 
 /** Sheets Advanced Service — pill chips. false = niet beschikbaar. */
+
+/** Wis data-validatie hard (ook CHIP via Sheets API). */
+function clearValidationsHard_(range) {
+  try { range.clearDataValidations(); } catch (e0) {}
+  try { range.removeCheckboxes(); } catch (e1) {}
+  try {
+    if (typeof Sheets === 'undefined' || !Sheets.Spreadsheets) return;
+    var ss = range.getSheet().getParent();
+    var sheetId = range.getSheet().getSheetId();
+    Sheets.Spreadsheets.batchUpdate({
+      requests: [{
+        setDataValidation: {
+          range: {
+            sheetId: sheetId,
+            startRowIndex: range.getRow() - 1,
+            endRowIndex: range.getRow() - 1 + range.getNumRows(),
+            startColumnIndex: range.getColumn() - 1,
+            endColumnIndex: range.getColumn() - 1 + range.getNumColumns()
+          }
+          // rule weglaten = validatie wissen
+        }
+      }]
+    }, ss.getId());
+  } catch (e2) {}
+}
+
 function trySetJaNeeChips_(range) {
+  // CHIP via API bleef plakken op Totaal/voet — uitgeschakeld; gewone dropdown + pastel CF.
+  return false;
   try {
     if (typeof Sheets === 'undefined' || !Sheets.Spreadsheets) return false;
     var ss = range.getSheet().getParent();
@@ -763,11 +790,10 @@ function herstelTrainingenTotaalEnVoet_() {
   var nCols = sh.getLastColumn();
   var lastRow = Math.max(sh.getLastRow(), totRow + 5);
 
-  // Alles vanaf Totaal: geen Ja/Nee-dropdown, geen checkbox
+  // Alles vanaf Totaal: geen Ja/Nee-dropdown (ook CHIP hard wissen)
   if (totRow > 0) {
     var below = sh.getRange(totRow, 2, lastRow, Math.max(endCol, nCols));
-    below.clearDataValidations();
-    try { below.removeCheckboxes(); } catch (e) {}
+    clearValidationsHard_(below);
     // Wis per ongeluk geplakte Ja/Nee op Totaal/voet (formules komen terug)
     sh.getRange(totRow, 2, totRow, endCol).clearContent();
   }
@@ -806,13 +832,24 @@ function herstelTrainingenTotaalEnVoet_() {
   sh.getRange(tafelRow, 1, tafelRow + 2, footEndCol).setBackground('#F5F5F5');
   // Clear any leftover validation/content in helper value cells (keep labels)
   sh.getRange(blankRow, 2, tafelRow + 2, footEndCol).clearContent();
-  sh.getRange(blankRow, 2, tafelRow + 2, footEndCol).clearDataValidations();
-  try { sh.getRange(blankRow, 2, tafelRow + 2, footEndCol).removeCheckboxes(); } catch (e2) {}
+  clearValidationsHard_(sh.getRange(blankRow, 2, tafelRow + 2, footEndCol));
 
-  // Spelers-rijen opnieuw zacht stylen (zonder Totaal)
+  // Spelers-rijen opnieuw zacht stylen (ALLEEN spelers)
   if (lastPlayer >= firstPlayer && endCol >= 2) {
     sh.clearConditionalFormatRules();
     styleJaNeeRange_(sh.getRange(firstPlayer, 2, lastPlayer, endCol));
+  }
+
+  // Nogmaals: CHIP-validatie mag nooit op Totaal/voet blijven
+  if (totRow > 0) {
+    clearValidationsHard_(sh.getRange(totRow, 2, lastRow, Math.max(endCol, nCols)));
+    // Formules stonden al; content van voet was geleegd — Totaal-formules opnieuw
+    for (var c2 = 2; c2 <= endCol; c2++) {
+      var colL = colToLetter_(c2);
+      sh.getRange(totRow, c2).setFormula(
+        totaalJaFormula_(colL, firstPlayer, lastPlayer)
+      );
+    }
   }
 
   ss.toast('Totaal telt Ja’s; voetregels zonder dropdown.', 'Academy sync', 6);
@@ -829,9 +866,7 @@ function styleJaNeeOnSheet_(sh, firstPlayerRow) {
   var lastRow = Math.max(sh.getLastRow(), meta.lastPlayer + 6);
   var nCols = sh.getLastColumn();
   if (meta.lastPlayer + 1 <= lastRow && nCols >= 2) {
-    var below = sh.getRange(meta.lastPlayer + 1, 2, lastRow, nCols);
-    below.clearDataValidations();
-    try { below.removeCheckboxes(); } catch (e) {}
+    clearValidationsHard_(sh.getRange(meta.lastPlayer + 1, 2, lastRow, nCols));
   }
   return 1;
 }
