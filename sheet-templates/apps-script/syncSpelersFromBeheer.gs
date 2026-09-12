@@ -772,7 +772,7 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
   var nCols = 1 + nMatch * 2 + 1;
 
   // Headers eerst zonder merge; merge B1:C1 / D1:E1 … pas helemaal op het eind.
-  var headerRow = ['Naam'];
+  var headerRow = [''];
   var idRow = ['sessie_id'];
   var subRow = [''];
   for (var i = 0; i < nMatch; i++) {
@@ -905,9 +905,28 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
   // Kolom A: nooit merge/checkbox (Sheets bug liet A1:A3 + vinkje staan)
   try { sh.getRange(1, 1, 3, 1).breakApart(); } catch (eA) {}
   try { sh.getRange(1, 1, lastPlayerRow + 5, 1).removeCheckboxes(); } catch (eAc) {}
-  sh.getRange(1, 1).setValue('Naam').setFontWeight('bold');
+  sh.getRange(1, 1).setValue('').setFontWeight('normal');
   sh.getRange(2, 1).setValue('sessie_id');
   sh.getRange(3, 1).setValue('');
+
+  // Spelersnamen: zelfde opmaak (geen bold/center van header-lek)
+  if (sorted.length) {
+    sh.getRange(firstPlayerRow, 1, lastPlayerRow, 1)
+      .setFontWeight('normal')
+      .setFontSize(10)
+      .setFontColor('#000000')
+      .setHorizontalAlignment('left')
+      .setVerticalAlignment('middle')
+      .setBackground(null);
+  }
+  // Totaal + eronder: wit, geen checkbox/FALSE-restjes
+  if (totRowNum > 0) {
+    var footEnd = Math.max(tafelW + 2, totRowNum + 8);
+    sh.getRange(totRowNum, 1, footEnd, nCols).setBackground(null);
+    try { sh.getRange(totRowNum, 2, footEnd, nCols).removeCheckboxes(); } catch (eTc) {}
+    try { clearValidationsHard_(sh.getRange(totRowNum, 2, footEnd, nCols)); } catch (eTv) {}
+  }
+
 
   // Rij 1: merge per match (B1:C1, D1:E1, …) — helemaal op het eind
   for (var hm = 0; hm < nMatch; hm++) {
