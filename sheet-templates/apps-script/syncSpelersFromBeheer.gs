@@ -761,7 +761,19 @@ function writeTrainingenMatrix_(ss, players, trainings, existing) {
 
 
 function writeWedstrijdenMatrix_(ss, players, matches, existing) {
-  var sh = ss.getSheetByName(SHEET_WEDSTRIJDEN_) || ss.insertSheet(SHEET_WEDSTRIJDEN_);
+  // Verse tab = geen oude merges die setValue/getDisplayValue laten crashen
+  var old = ss.getSheetByName(SHEET_WEDSTRIJDEN_);
+  var putAt = old ? old.getIndex() : ss.getNumSheets();
+  if (old) {
+    try { ss.deleteSheet(old); } catch (eDel) {
+      resetSheet_(old);
+    }
+  }
+  var sh = ss.getSheetByName(SHEET_WEDSTRIJDEN_);
+  if (!sh) {
+    sh = ss.insertSheet(SHEET_WEDSTRIJDEN_, Math.min(Math.max(putAt, 1), ss.getNumSheets() + 1));
+  }
+
   var sorted = (players || []).slice().sort(function (a, b) {
     return Number(a.nummer) - Number(b.nummer);
   });
@@ -807,11 +819,6 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
   for (var t = 0; t < nMatch * 2; t++) totalRow.push('');
   totalRow.push('');
 
-  resetSheet_(sh);
-  // Extra: wis breed bereik + unmerge (resetSheet mist soms merges)
-  try { sh.getRange(1, 1, Math.max(sh.getMaxRows(), 40), Math.max(sh.getMaxColumns(), 40)).breakApart(); } catch (eBr0) {}
-  try { sh.getRange(1, 1, Math.max(sh.getMaxRows(), 40), Math.max(sh.getMaxColumns(), 40)).clearContent(); } catch (eCl0) {}
-
   var all = [headerRow, idRow, subRow].concat(dataRows);
   if (sorted.length) all.push(totalRow);
   sh.getRange(1, 1, all.length, nCols).setValues(all);
@@ -836,10 +843,8 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
     }
   }
 
-  // Import vóór checkboxes (alleen spelersrijen)
   try { importWedstrijdenPlayerAtt_(sh, HERSTEL_PAYLOAD_, firstPlayerRow, lastPlayerRow, nMatch); } catch (eImp) {}
 
-  // Checkboxes / Ja-Nee ALLEEN op spelersrijen
   if (sorted.length && nMatch > 0) {
     for (var mk = 0; mk < nMatch; mk++) {
       var aanCol = 2 + mk * 2;
@@ -853,28 +858,19 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
     }
   }
 
-  // Kolom A: nooit mergen, A1 leeg, geen "Naam"
-  try { sh.getRange(1, 1, Math.max(footEnd, 30), 1).breakApart(); } catch (eA) {}
-  try { sh.getRange(1, 1, Math.max(footEnd, 30), 1).removeCheckboxes(); } catch (eAc) {}
-  sh.getRange(1, 1).clearContent().setFontWeight('normal').setFontSize(10).setFontColor('#000000')
-    .setHorizontalAlignment('left').setVerticalAlignment('bottom');
+  // Kolom A
+  sh.getRange(1, 1).clearContent().setFontWeight('normal').setFontSize(10);
   sh.getRange(2, 1).setValue('sessie_id');
   sh.getRange(3, 1).clearContent();
   if (sorted.length) {
     sh.getRange(firstPlayerRow, 1, lastPlayerRow, 1)
       .setFontWeight('normal').setFontSize(10).setFontColor('#000000')
-      .setHorizontalAlignment('left').setVerticalAlignment('middle').setBackground(null);
+      .setHorizontalAlignment('left').setVerticalAlignment('middle');
   }
 
-  // Totaal + voet: eerst ALLE content/checkboxes weg (FALSE blijft anders staan)
+  // Totaal + voet
   if (totRowNum > 0) {
-    var footRange = sh.getRange(totRowNum, 1, footEnd, nCols);
-    try { footRange.breakApart(); } catch (eFb) {}
-    try { footRange.removeCheckboxes(); } catch (eFc) {}
-    try { clearValidationsHard_(footRange); } catch (eFv) {}
-    footRange.clearContent();
-    footRange.setBackground(null).setFontWeight('normal').setFontColor('#000000');
-
+    sh.getRange(totRowNum, 1, footEnd, nCols).clearContent().setBackground(null);
     sh.getRange(totRowNum, 1).setValue('Totaal').setFontWeight('bold');
     if (nMatch > 0) {
       for (var tc = 0; tc < nMatch; tc++) {
@@ -888,8 +884,6 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
         );
       }
     }
-
-    sh.getRange(blankW, 1).setValue('');
     sh.getRange(tafelW, 1).setValue('Tafel').setFontWeight('bold');
     sh.getRange(tafelW + 1, 1).setValue('Truitjes').setFontWeight('bold');
     sh.getRange(tafelW + 2, 1).setValue('Afspraken zie apart blad')
@@ -901,13 +895,11 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
     }
   }
 
-  // Subheaders rij 3
   sh.getRange(3, 1, 3, nCols)
     .setFontWeight('normal').setFontSize(9).setFontColor('#666666')
     .setWrap(true).setHorizontalAlignment('center');
 
-  // Headers: eerst hele rij 1 unmergen, labels zetten, dan per paar mergen
-  try { sh.getRange(1, 1, 1, nCols).breakApart(); } catch (eHr) {}
+  // Headers op rij 1 (labels al via setValues). Merge optioneel — crash mag sync niet stoppen.
   sh.getRange(1, 1).clearContent().setFontWeight('normal');
   for (var hm = 0; hm < nMatch; hm++) {
     var hc = 2 + hm * 2;
@@ -916,8 +908,7 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
       .setFontWeight('bold').setWrap(true)
       .setVerticalAlignment('middle').setHorizontalAlignment('center')
       .setFontColor('#000000').setFontSize(10);
-    sh.getRange(1, hc + 1).clearContent()
-      .setFontWeight('bold').setVerticalAlignment('middle').setHorizontalAlignment('center');
+    sh.getRange(1, hc + 1).clearContent();
   }
   sh.getRange(1, nCols).setValue('Totaal gespeeld').setFontWeight('bold').setHorizontalAlignment('center');
   sh.setRowHeight(1, 78);
@@ -925,27 +916,11 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
   for (var hm2 = 0; hm2 < nMatch; hm2++) {
     var hc2 = 2 + hm2 * 2;
     try {
-      sh.getRange(1, hc2, 1, hc2 + 1).mergeAcross();
-    } catch (eMg1) {
-      try { sh.getRange(1, hc2, 1, hc2 + 1).merge(); } catch (eMg2) {
-        // Merge faalt: label blijft in linker cel — beter dan lege Match-kolom
-      }
-    }
-    // Verifieer: als header leeg is, forceer opnieuw
-    var shown = String(sh.getRange(1, hc2).getDisplayValue() || '').trim();
-    if (!shown) {
-      var again = String(headerRow[1 + hm2 * 2] || '').trim() || ('Match ' + (hm2 + 1));
-      try { sh.getRange(1, hc2, 1, hc2 + 1).breakApart(); } catch (eBr2) {}
-      sh.getRange(1, hc2).setValue(again).setFontWeight('bold').setWrap(true)
-        .setVerticalAlignment('middle').setHorizontalAlignment('center');
+      sh.getRange(1, hc2, 1, hc2 + 1).merge();
+    } catch (eMg) {
+      // Laat unmerged — label zit in linker cel
     }
   }
-
-  // A1 finale clear (nooit "Naam")
-  try { sh.getRange(1, 1, 3, 1).breakApart(); } catch (eAf) {}
-  sh.getRange(1, 1).clearContent().setFontWeight('normal').setFontSize(10);
-  sh.getRange(2, 1).setValue('sessie_id');
-  sh.getRange(3, 1).clearContent();
 
   try { if (sh.getMaxRows() >= 2) sh.hideRows(2); } catch (eH) {}
   try { sh.setFrozenColumns(1); } catch (eF1) {}
@@ -957,7 +932,6 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
   }
   sh.setColumnWidth(nCols, 90);
 
-  // Laatste pass: Totaal-formules opnieuw (checkboxes mogen hier nooit komen)
   if (totRowNum > 0 && nMatch > 0) {
     try { sh.getRange(totRowNum, 2, totRowNum, nCols).removeCheckboxes(); } catch (eTx) {}
     for (var tc2 = 0; tc2 < nMatch; tc2++) {
@@ -973,6 +947,7 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
     sh.getRange(totRowNum, 1).setValue('Totaal').setFontWeight('bold');
   }
 }
+
 
 
 
