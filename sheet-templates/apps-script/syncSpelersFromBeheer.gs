@@ -370,16 +370,30 @@ function parseVblRawToSessie_(raw, ourGuid) {
   };
 }
 
-/** VBL eerst; Beheer-extras erbij als andere datum/id. */
+/** VBL eerst; Beheer alleen echte extras (andere dag of duidelijk andere wedstrijd). */
 function mergeMatchSessies_(vbl, sheet) {
-  var byId = {};
-  (vbl || []).forEach(function (s) { byId[s.sessie_id] = s; });
+  var out = [];
+  var seenDay = {};
+  (vbl || []).forEach(function (s) {
+    out.push(s);
+    var day = String(s.datum || '');
+    if (day) seenDay[day] = true;
+  });
   (sheet || []).forEach(function (s) {
+    var day = String(s.datum || '');
+    // Zelfde dag als VBL = bijna altijd duplicaat (andere id/schrijfwijze)
+    if (day && seenDay[day]) return;
     var id = String(s.sessie_id || '');
     if (!id) return;
-    if (!byId[id]) byId[id] = s;
+    var dup = false;
+    for (var i = 0; i < out.length; i++) {
+      if (String(out[i].sessie_id || '') === id) { dup = true; break; }
+    }
+    if (dup) return;
+    out.push(s);
+    if (day) seenDay[day] = true;
   });
-  return Object.keys(byId).map(function (k) { return byId[k]; }).sort(function (a, b) {
+  return out.sort(function (a, b) {
     return String(a.datum).localeCompare(String(b.datum)) || String(a.uur || '').localeCompare(String(b.uur || ''));
   });
 }
@@ -913,6 +927,7 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
   sh.getRange(1, nCols).setValue('Totaal gespeeld').setFontWeight('bold').setHorizontalAlignment('center');
   sh.setRowHeight(1, 78);
 
+  try { sh.showRows(1, Math.max(footEnd, lastPlayerRow + 5, 25)); } catch (eShow) {}
   try { if (sh.getMaxRows() >= 2) sh.hideRows(2); } catch (eH) {}
   try { sh.setFrozenColumns(1); } catch (eF1) {}
   try { sh.setFrozenRows(3); } catch (eF2) {}
