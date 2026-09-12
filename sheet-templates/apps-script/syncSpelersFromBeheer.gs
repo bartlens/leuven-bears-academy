@@ -42,7 +42,10 @@ function syncAllesVanuitBeheer() {
 
   var sessies = buildSessiesVanuitBeheer_(beheer);
   var trainings = sessies.filter(function (s) { return s.type === 'training'; });
-  var matches = sessies.filter(function (s) { return s.type === 'match'; });
+  // Wedstrijden: VBL (Vlaams-Brabant / Basketbal Vlaanderen) + Beheer-extras
+  var vblMatches = fetchVblMatchSessiesU10C_();
+  var sheetMatches = sessies.filter(function (s) { return s.type === 'match'; });
+  var matches = mergeMatchSessies_(vblMatches, sheetMatches);
 
   var existing = collectAllAttendanceMaps_(ss);
   writeTrainingenMatrix_(ss, players, trainings, existing);
@@ -128,6 +131,7 @@ function onOpen() {
     .addItem('Ja/Nee chips + zachte kleuren', 'styleJaNeeChipsNu')
     .addItem('Herstel Totaal + voetregels', 'herstelTrainingenTotaalEnVoet_')
     .addItem('Opruimen overbodige tabs', 'opruimOverbodigeTabs_')
+    .addItem('Wedstrijden uit VBL verversen', 'syncAllesVanuitBeheer')
     .addToUi();
 }
 
@@ -187,6 +191,79 @@ function writeSpelersRef_(ss, players) {
 }
 
 // ── Sessies bouwen ───────────────────────────────────────────────────
+
+
+/** U10 C VBL teamguid (twee spaties → ++). */
+var VBL_U10C_GUID_ = 'BVBL1125G10  3';
+var VBL_API_ = 'https://vblcb.wisseq.eu/VBLCB_WebService/data/TeamMatchesByGuid?teamguid=';
+
+/** Haal officiële U10 C-matchen op (Basketbal Vlaanderen). */
+function fetchVblMatchSessiesU10C_() {
+  try {
+    var enc = String(VBL_U10C_GUID_).replace(/ +/g, '++');
+    var res = UrlFetchApp.fetch(VBL_API_ + enc, {
+      muteHttpExceptions: true,
+      followRedirects: true
+    });
+    if (res.getResponseCode() !== 200) return [];
+    var data = JSON.parse(res.getContentText());
+    if (!data || !data.length) return [];
+    var out = [];
+    for (var i = 0; i < data.length; i++) {
+      var s = parseVblRawToSessie_(data[i], VBL_U10C_GUID_);
+      if (s) out.push(s);
+    }
+    out.sort(function (a, b) {
+      return String(a.datum).localeCompare(String(b.datum)) || String(a.uur).localeCompare(String(b.uur));
+    });
+    return out;
+  } catch (e) {
+    return [];
+  }
+}
+
+function parseVblRawToSessie_(raw, ourGuid) {
+  var dateIso = formatDateIso_(raw.datumString);
+  // datumString is often DD-MM-YYYY
+  if (!dateIso || dateIso.indexOf('-') < 0) {
+    var m = String(raw.datumString || '').trim().match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+    if (m) dateIso = m[3] + '-' + pad2_(m[2]) + '-' + pad2_(m[1]);
+  }
+  if (!dateIso) return null;
+  var weHome = raw.tTGUID === ourGuid;
+  var weAway = raw.tUGUID === ourGuid;
+  var venue = weHome ? 'thuis' : (weAway ? 'uit' : '');
+  var tegen = weHome ? String(raw.tUNaam || '').trim() : String(raw.tTNaam || '').trim();
+  if (!tegen) return null;
+  var uur = formatTime_(raw.beginTijd);
+  var loc = String(raw.accNaam || '').trim();
+  var sid = 'm-' + dateIso;
+  return {
+    sessie_id: sid,
+    type: 'match',
+    datum: dateIso,
+    uur: uur,
+    label: (venue === 'uit' ? 'Uit' : 'Thuis') + ' vs ' + tegen,
+    tegenstander: tegen,
+    locatie: loc,
+    zichtbaar: 'ja',
+    bron: 'vbl'
+  };
+}
+
+/** VBL eerst; Beheer-extras erbij als andere datum/id. */
+function mergeMatchSessies_(vbl, sheet) {
+  var byId = {};
+  (vbl || []).forEach(function (s) { byId[s.sessie_id] = s; });
+  (sheet || []).forEach(function (s) {
+    var id = String(s.sessie_id || '');
+    if (!id) return;
+    if (!byId[id]) byId[id] = s;
+  });
+  return Object.keys(byId).map(function (k) { return byId[k]; }).sort(function (a, b) {
+    return String(a.datum).localeCompare(String(b.datum)) || String(a.uur || '').localeCompare(String(b.uur || ''));
+  });
+}
 
 function buildSessiesVanuitBeheer_(beheer) {
   var week = readTrainingenWeek_(beheer);
@@ -552,10 +629,9 @@ function writeTrainingenMatrix_(ss, players, trainings, existing) {
 }
 
 /**
- * Wedstrijden — zoals origineel U10 C matchblad:
- * Per match 2 kolommen: Kan aanwezig zijn + Heeft gespeeld (merged header).
- * Row 1 match-label · Row 2 sessie_id (verborgen, op 1e kolom van paar)
- * Row 3 sublabels · spelers · Totaal-rij · Totaal-kolom (= gespeeld).
+ * Wedstrijden — opmaak zoals origineel U10 C:
+ * Match N + datum/tegenstander/uur (bold, merged) · Kan aanwezig (checkbox+pastel) ·
+ * Heeft gespeeld (checkbox) · Totaal · voetregels Tafel/Truitjes/Afspraken · freeze kolom A.
  */
 function writeWedstrijdenMatrix_(ss, players, matches, existing) {
   var sh = ss.getSheetByName(SHEET_WEDSTRIJDEN_) || ss.insertSheet(SHEET_WEDSTRIJDEN_);
@@ -566,14 +642,14 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
     return String(s.zichtbaar || 'ja').toLowerCase() !== 'nee';
   });
   var nMatch = visible.length;
-  var nCols = 1 + nMatch * 2 + 1; // Naam + pairs + Totaal
+  var nCols = 1 + nMatch * 2 + 1;
 
   var headerRow = ['Naam'];
   var idRow = ['sessie_id'];
   var subRow = [''];
   for (var i = 0; i < nMatch; i++) {
-    headerRow.push(matchHeaderLabel_(visible[i]));
-    headerRow.push(''); // merge partner
+    headerRow.push(matchHeaderLabel_(visible[i], i));
+    headerRow.push('');
     idRow.push(String(visible[i].sessie_id || ''));
     idRow.push(String(visible[i].sessie_id || '') + '|gespeeld');
     subRow.push('Kan aanwezig zijn');
@@ -590,8 +666,8 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
     var keys = playerMatchKeys_(player);
     for (var s = 0; s < nMatch; s++) {
       var sid = String(visible[s].sessie_id || '');
-      row.push(toJaNee_(lookupAtt_(existing, keys, sid, 'aan')));
-      row.push(toJaNee_(lookupAtt_(existing, keys, sid, 'gespeeld')));
+      row.push(toCheckboxBool_(lookupAtt_(existing, keys, sid, 'aan')));
+      row.push(toCheckboxBool_(lookupAtt_(existing, keys, sid, 'gespeeld')));
     }
     row.push('');
     dataRows.push(row);
@@ -606,7 +682,6 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
   if (sorted.length) all.push(totalRow);
   sh.getRange(1, 1, all.length, nCols).setValues(all);
 
-  // Merge match headers (row 1)
   for (var m = 0; m < nMatch; m++) {
     var c1 = 2 + m * 2;
     sh.getRange(1, c1, 1, c1 + 1).merge();
@@ -617,10 +692,9 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
   for (var r = 0; r < sorted.length; r++) {
     var rn = firstPlayerRow + r;
     if (nMatch > 0) {
-      // Som van "Heeft gespeeld"-kolommen (niet aaneengesloten → N()+N()+…)
       var bits = [];
       for (var mj = 0; mj < nMatch; mj++) {
-        bits.push('IF(' + colToLetter_(3 + mj * 2) + rn + '="Ja";1;0)');
+        bits.push('N(' + colToLetter_(3 + mj * 2) + rn + ')');
       }
       sh.getRange(rn, nCols).setFormula('=' + bits.join('+'));
     } else {
@@ -633,19 +707,19 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
     for (var c = 0; c < nMatch * 2; c++) {
       var colLetter = colToLetter_(2 + c);
       sh.getRange(totRowNum, 2 + c).setFormula(
-        '=COUNTIF(' + colLetter + firstPlayerRow + ':' + colLetter + lastPlayerRow + ';"Ja")'
+        '=COUNTIF(' + colLetter + firstPlayerRow + ':' + colLetter + lastPlayerRow + ';TRUE)'
       );
     }
   }
 
-
-  // Voetregels ALLEEN bij Wedstrijden (Tafel / Truitjes / Afspraken)
-  var blankW = lastPlayerRow + 2; // na Totaal-rij
+  // Voetregels
+  var blankW = lastPlayerRow + 2;
   var tafelW = blankW + 1;
   sh.getRange(blankW, 1).setValue('');
   sh.getRange(tafelW, 1).setValue('Tafel');
   sh.getRange(tafelW + 1, 1).setValue('Truitjes');
   sh.getRange(tafelW + 2, 1).setValue('Afspraken zie apart blad');
+  sh.getRange(tafelW + 2, 1).setFontColor('#990000');
   for (var fi = 0; fi < nMatch; fi++) {
     var cAan = 2 + fi * 2;
     sh.getRange(tafelW, cAan).setValue('Naam');
@@ -653,32 +727,33 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
   }
   sh.getRange(tafelW, 1, tafelW + 2, 1).setFontWeight('bold');
   sh.getRange(tafelW, 1, tafelW + 2, nCols).setBackground('#F5F5F5');
-  if (sorted.length) {
-    try { clearValidationsHard_(sh.getRange(lastPlayerRow + 1, 2, tafelW + 2, nCols)); } catch (eV) {}
-  }
 
-  styleMatrixHeader_(sh, nCols, 64);
+  // Opmaak: bold match-headers, freeze A, wrap
+  sh.getRange(1, 1, 1, nCols)
+    .setFontWeight('bold')
+    .setWrap(true)
+    .setVerticalAlignment('middle')
+    .setHorizontalAlignment('center');
+  sh.setRowHeight(1, 72);
   sh.getRange(3, 1, 3, nCols).setFontWeight('bold').setWrap(true).setHorizontalAlignment('center');
+  if (sorted.length) sh.getRange(lastPlayerRow + 1, 1, lastPlayerRow + 1, nCols).setFontWeight('bold');
   if (sh.getMaxRows() >= 2) sh.hideRows(2);
   sh.setFrozenColumns(1);
-  sh.setFrozenRows(1);
-  sh.setColumnWidth(1, 130);
-  for (var cw = 2; cw < nCols; cw++) sh.setColumnWidth(cw, 78);
+  sh.setFrozenRows(3);
+  sh.setColumnWidth(1, 140);
+  for (var cw = 2; cw < nCols; cw++) sh.setColumnWidth(cw, 88);
   sh.setColumnWidth(nCols, 90);
 
   if (sorted.length && nMatch > 0) {
     for (var mk = 0; mk < nMatch; mk++) {
       var aanCol = 2 + mk * 2;
       var gesCol = 3 + mk * 2;
-      applyJaNeeValidation_(sh.getRange(firstPlayerRow, aanCol, lastPlayerRow, aanCol));
-      applyJaNeeValidation_(sh.getRange(firstPlayerRow, gesCol, lastPlayerRow, gesCol));
+      applyCheckboxesWithSoftColors_(sh.getRange(firstPlayerRow, aanCol, lastPlayerRow, aanCol));
+      applyCheckboxesPlain_(sh.getRange(firstPlayerRow, gesCol, lastPlayerRow, gesCol));
     }
-    // Nogmaals: geen dropdown op Totaal/voet
-    try { clearValidationsHard_(sh.getRange(lastPlayerRow + 1, 2, lastPlayerRow + 6, nCols)); } catch (eV2) {}
+    try { clearValidationsHard_(sh.getRange(lastPlayerRow + 1, 2, tafelW + 2, nCols)); } catch (eV2) {}
   }
 }
-
-
 
 function formatDateDMyyyy_(iso) {
   var s = String(iso || '').trim();
@@ -1036,27 +1111,27 @@ function findTrainingenPlayerBlock_(sh, firstPlayerRow) {
 
 
 
-function matchHeaderLabel_(s) {
-  // Zoals origineel: datum + tegenstander (+ thuis/uit + uur)
+function matchHeaderLabel_(s, index) {
+  // Zoals origineel: Match N + weekdag datum + tegenstander + uur locatie
   var lines = [];
-  var ddmm = formatDateDdMm_(s.datum);
+  var n = (typeof index === 'number' ? index : 0) + 1;
+  lines.push('Match ' + n);
+  var dmy = formatDateDMyyyy_(s.datum); // 27-9-2026
   var wd = weekdayIndexFromIso_(s.datum);
   var dayName = WEEKDAYS_NL_[wd] || '';
   if (dayName) dayName = dayName.charAt(0).toUpperCase() + dayName.slice(1);
-  if (ddmm) lines.push((dayName ? dayName + ' ' : '') + ddmm);
+  if (dmy) lines.push((dayName ? dayName + ' ' : '') + dmy);
   var tegen = String(s.tegenstander || '').trim();
   if (!tegen) {
-    // strip "Thuis vs " / "Uit vs "
     tegen = String(s.label || '').replace(/^(Thuis|Uit)\s+vs\s+/i, '').trim();
   }
+  // strip G10 suffix noise for shorter header like original
+  tegen = tegen.replace(/\s+G10\s+[A-Z]\b/i, '').trim();
   if (tegen) lines.push(tegen);
   var where = [];
-  if (s.label && /^(Thuis|Uit)/i.test(String(s.label))) {
-    where.push(String(s.label).indexOf('Uit') === 0 ? 'Uit' : 'Thuis');
-  }
   if (s.uur) where.push(String(s.uur));
   if (s.locatie) where.push(shortLoc_(s.locatie) || s.locatie);
-  if (where.length) lines.push(where.join(' · '));
+  if (where.length) lines.push(where.join(' '));
   return lines.join('\n') || String(s.sessie_id || '');
 }
 
@@ -1078,6 +1153,32 @@ function resetSheet_(sh) {
   } catch (e) {}
   try { sh.showRows(1, Math.max(sh.getMaxRows(), 3)); } catch (e2) {}
   try { sh.setFrozenColumns(0); sh.setFrozenRows(0); } catch (e3) {}
+}
+
+
+/** Checkbox + zachte pastel groen/rood (niet neon). */
+function applyCheckboxesWithSoftColors_(range) {
+  var values = range.getValues();
+  for (var r = 0; r < values.length; r++) {
+    for (var c = 0; c < values[r].length; c++) {
+      values[r][c] = toCheckboxBool_(values[r][c]);
+    }
+  }
+  range.setValues(values);
+  range.insertCheckboxes();
+  var sheet = range.getSheet();
+  var existing = sheet.getConditionalFormatRules();
+  existing.push(SpreadsheetApp.newConditionalFormatRule()
+    .whenCellTrue()
+    .setBackground(JA_NEE_COLORS_.jaBg)
+    .setRanges([range])
+    .build());
+  existing.push(SpreadsheetApp.newConditionalFormatRule()
+    .whenCellFalse()
+    .setBackground(JA_NEE_COLORS_.neeBg)
+    .setRanges([range])
+    .build());
+  sheet.setConditionalFormatRules(existing);
 }
 
 function applyCheckboxesWithColors_(range) {
