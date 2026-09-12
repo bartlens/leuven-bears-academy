@@ -919,12 +919,37 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
       .setVerticalAlignment('middle')
       .setBackground(null);
   }
-  // Totaal + eronder: wit, geen checkbox/FALSE-restjes
+  // Totaal + eronder: wit, geen checkbox/FALSE-restjes; formules opnieuw
   if (totRowNum > 0) {
     var footEnd = Math.max(tafelW + 2, totRowNum + 8);
     sh.getRange(totRowNum, 1, footEnd, nCols).setBackground(null);
     try { sh.getRange(totRowNum, 2, footEnd, nCols).removeCheckboxes(); } catch (eTc) {}
     try { clearValidationsHard_(sh.getRange(totRowNum, 2, footEnd, nCols)); } catch (eTv) {}
+    sh.getRange(totRowNum, 1).setValue('Totaal').setFontWeight('bold');
+    if (nMatch > 0) {
+      for (var tc = 0; tc < nMatch; tc++) {
+        var aanL2 = colToLetter_(2 + tc * 2);
+        var gesL2 = colToLetter_(3 + tc * 2);
+        sh.getRange(totRowNum, 2 + tc * 2).setFormula(
+          totaalJaFormula_(aanL2, firstPlayerRow, lastPlayerRow)
+        );
+        sh.getRange(totRowNum, 3 + tc * 2).setFormula(
+          '=COUNTIF(' + gesL2 + firstPlayerRow + ':' + gesL2 + lastPlayerRow + ';TRUE)'
+        );
+      }
+      sh.getRange(totRowNum, nCols).clearContent();
+    }
+    // Lege rij + Tafel/Truitjes opnieuw (zonder FALSE)
+    sh.getRange(blankW, 1).setValue('');
+    sh.getRange(tafelW, 1).setValue('Tafel').setFontWeight('bold');
+    sh.getRange(tafelW + 1, 1).setValue('Truitjes').setFontWeight('bold');
+    sh.getRange(tafelW + 2, 1).setValue('Afspraken zie apart blad')
+      .setFontColor('#990000').setFontWeight('bold');
+    for (var fi2 = 0; fi2 < nMatch; fi2++) {
+      var cA2 = 2 + fi2 * 2;
+      sh.getRange(tafelW, cA2).setValue('Naam');
+      sh.getRange(tafelW + 1, cA2).setValue('Naam (#nummer)');
+    }
   }
 
 
