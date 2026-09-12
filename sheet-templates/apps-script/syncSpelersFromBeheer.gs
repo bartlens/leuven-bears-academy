@@ -761,19 +761,7 @@ function writeTrainingenMatrix_(ss, players, trainings, existing) {
 
 
 function writeWedstrijdenMatrix_(ss, players, matches, existing) {
-  // Verse tab = geen oude merges die setValue/getDisplayValue laten crashen
-  var old = ss.getSheetByName(SHEET_WEDSTRIJDEN_);
-  var putAt = old ? old.getIndex() : ss.getNumSheets();
-  if (old) {
-    try { ss.deleteSheet(old); } catch (eDel) {
-      resetSheet_(old);
-    }
-  }
-  var sh = ss.getSheetByName(SHEET_WEDSTRIJDEN_);
-  if (!sh) {
-    sh = ss.insertSheet(SHEET_WEDSTRIJDEN_, Math.min(Math.max(putAt, 1), ss.getNumSheets() + 1));
-  }
-
+  var sh = ss.getSheetByName(SHEET_WEDSTRIJDEN_) || ss.insertSheet(SHEET_WEDSTRIJDEN_);
   var sorted = (players || []).slice().sort(function (a, b) {
     return Number(a.nummer) - Number(b.nummer);
   });
@@ -819,6 +807,19 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
   for (var t = 0; t < nMatch * 2; t++) totalRow.push('');
   totalRow.push('');
 
+  // Geen deleteSheet (geeft "onbekende fout"). Wel agressief unmergen + clear.
+  resetSheet_(sh);
+  try {
+    var maxR = Math.min(sh.getMaxRows(), 60);
+    var maxC = Math.min(sh.getMaxColumns(), 60);
+    var merges = sh.getRange(1, 1, maxR, maxC).getMergedRanges();
+    for (var mi = 0; mi < merges.length; mi++) {
+      try { merges[mi].breakApart(); } catch (eM) {}
+    }
+    sh.getRange(1, 1, maxR, maxC).breakApart();
+  } catch (eU) {}
+  SpreadsheetApp.flush();
+
   var all = [headerRow, idRow, subRow].concat(dataRows);
   if (sorted.length) all.push(totalRow);
   sh.getRange(1, 1, all.length, nCols).setValues(all);
@@ -858,7 +859,6 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
     }
   }
 
-  // Kolom A
   sh.getRange(1, 1).clearContent().setFontWeight('normal').setFontSize(10);
   sh.getRange(2, 1).setValue('sessie_id');
   sh.getRange(3, 1).clearContent();
@@ -868,8 +868,8 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
       .setHorizontalAlignment('left').setVerticalAlignment('middle');
   }
 
-  // Totaal + voet
   if (totRowNum > 0) {
+    try { sh.getRange(totRowNum, 1, footEnd, nCols).removeCheckboxes(); } catch (eTc) {}
     sh.getRange(totRowNum, 1, footEnd, nCols).clearContent().setBackground(null);
     sh.getRange(totRowNum, 1).setValue('Totaal').setFontWeight('bold');
     if (nMatch > 0) {
@@ -899,7 +899,7 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
     .setFontWeight('normal').setFontSize(9).setFontColor('#666666')
     .setWrap(true).setHorizontalAlignment('center');
 
-  // Headers op rij 1 (labels al via setValues). Merge optioneel — crash mag sync niet stoppen.
+  // Headers: GEEN merge (merge crashte sync). Label in aanwezig-kolom, gespeeld-kolom leeg.
   sh.getRange(1, 1).clearContent().setFontWeight('normal');
   for (var hm = 0; hm < nMatch; hm++) {
     var hc = 2 + hm * 2;
@@ -912,15 +912,6 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
   }
   sh.getRange(1, nCols).setValue('Totaal gespeeld').setFontWeight('bold').setHorizontalAlignment('center');
   sh.setRowHeight(1, 78);
-
-  for (var hm2 = 0; hm2 < nMatch; hm2++) {
-    var hc2 = 2 + hm2 * 2;
-    try {
-      sh.getRange(1, hc2, 1, hc2 + 1).merge();
-    } catch (eMg) {
-      // Laat unmerged — label zit in linker cel
-    }
-  }
 
   try { if (sh.getMaxRows() >= 2) sh.hideRows(2); } catch (eH) {}
   try { sh.setFrozenColumns(1); } catch (eF1) {}
@@ -947,6 +938,7 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
     sh.getRange(totRowNum, 1).setValue('Totaal').setFontWeight('bold');
   }
 }
+
 
 
 
