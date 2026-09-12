@@ -753,17 +753,7 @@ function writeTrainingenMatrix_(ss, players, trainings, existing) {
  * Match N + datum/tegenstander/uur (bold, merged) · Kan aanwezig (checkbox+pastel) ·
  * Heeft gespeeld (checkbox) · Totaal · voetregels Tafel/Truitjes/Afspraken · freeze kolom A.
  */
-function safeMerge_(sh, r1, c1, r2, c2, value) {
-  var range = sh.getRange(r1, c1, r2, c2);
-  try { range.breakApart(); } catch (e0) {}
-  if (value !== undefined && value !== null) {
-    sh.getRange(r1, c1).setValue(value);
-  }
-  if (r1 === r2 && c1 === c2) return;
-  try { range.merge(); } catch (e1) {
-    // overlap / al gemerged — negeer, waarde staat al in linkerboven
-  }
-}
+
 
 function writeWedstrijdenMatrix_(ss, players, matches, existing) {
   var sh = ss.getSheetByName(SHEET_WEDSTRIJDEN_) || ss.insertSheet(SHEET_WEDSTRIJDEN_);
@@ -776,14 +766,14 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
   var nMatch = visible.length;
   var nCols = 1 + nMatch * 2 + 1;
 
+  // Geen merges — vermijdt "samengevoegd bereik"-crash in Sheets.
+  // Headertekst staat in de "Kan aanwezig"-kolom; "Heeft gespeeld"-kolom blijft leeg in R1.
   var headerRow = ['Naam'];
   var idRow = ['sessie_id'];
   var subRow = [''];
-  var headerLabels = [];
   for (var i = 0; i < nMatch; i++) {
     var lab = matchHeaderLabel_(visible[i], i);
     if (!String(lab || '').trim()) lab = 'Match ' + (i + 1);
-    headerLabels.push(lab);
     headerRow.push(lab);
     headerRow.push('');
     idRow.push(String(visible[i].sessie_id || ''));
@@ -803,9 +793,8 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
     for (var s = 0; s < nMatch; s++) {
       var sid = String(visible[s].sessie_id || '');
       row.push(toJaNee_(lookupAtt_(existing, keys, sid, 'aan')));
-      // leeg i.p.v. false tot checkboxes gezet zijn
       var g = lookupAtt_(existing, keys, sid, 'gespeeld');
-      row.push(g === true || g === 'TRUE' || toJaNee_(g) === 'Ja' ? true : false);
+      row.push(g === true || g === 'TRUE' || toJaNee_(g) === 'Ja');
     }
     row.push('');
     dataRows.push(row);
@@ -819,11 +808,6 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
   var all = [headerRow, idRow, subRow].concat(dataRows);
   if (sorted.length) all.push(totalRow);
   sh.getRange(1, 1, all.length, nCols).setValues(all);
-
-  for (var m = 0; m < nMatch; m++) {
-    var c1 = 2 + m * 2;
-    safeMerge_(sh, 1, c1, 1, c1 + 1, headerLabels[m]);
-  }
 
   var firstPlayerRow = 4;
   var lastPlayerRow = 3 + sorted.length;
@@ -855,12 +839,32 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
     }
   }
 
-  // Opmaak + validatie EERST (niet laten crashen door voetregel-merge)
-  sh.getRange(1, 1, 1, nCols)
-    .setFontWeight('bold')
-    .setWrap(true)
-    .setVerticalAlignment('middle')
-    .setHorizontalAlignment('center');
+  // Voetregels zonder merge
+  var blankW = lastPlayerRow + 2;
+  var tafelW = blankW + 1;
+  sh.getRange(blankW, 1).setValue('');
+  sh.getRange(tafelW, 1).setValue('Tafel');
+  sh.getRange(tafelW + 1, 1).setValue('Truitjes');
+  sh.getRange(tafelW + 2, 1).setValue('Afspraken zie apart blad')
+    .setFontColor('#990000').setFontWeight('bold');
+  for (var fi = 0; fi < nMatch; fi++) {
+    var cAan = 2 + fi * 2;
+    sh.getRange(tafelW, cAan).setValue('Naam');
+    sh.getRange(tafelW + 1, cAan).setValue('Naam (#nummer)');
+  }
+  sh.getRange(tafelW, 1, tafelW + 1, 1).setFontWeight('bold');
+  sh.getRange(tafelW, 1, tafelW + 2, nCols).setBackground('#F5F5F5');
+
+  // Opmaak
+  for (var hi = 0; hi < nMatch; hi++) {
+    sh.getRange(1, 2 + hi * 2)
+      .setFontWeight('bold')
+      .setWrap(true)
+      .setVerticalAlignment('middle')
+      .setHorizontalAlignment('center');
+  }
+  sh.getRange(1, 1).setFontWeight('bold');
+  sh.getRange(1, nCols).setFontWeight('bold').setHorizontalAlignment('center');
   sh.setRowHeight(1, 78);
   sh.getRange(3, 1, 3, nCols)
     .setFontWeight('normal')
@@ -869,12 +873,15 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
     .setWrap(true)
     .setHorizontalAlignment('center');
   if (sorted.length) sh.getRange(totRowNum, 1, totRowNum, nCols).setFontWeight('bold');
-  sh.getRange(1, 1).setFontWeight('bold').setFontColor('#000000').setFontSize(10);
-  if (sh.getMaxRows() >= 2) sh.hideRows(2);
-  sh.setFrozenColumns(1);
-  sh.setFrozenRows(3);
+
+  try { if (sh.getMaxRows() >= 2) sh.hideRows(2); } catch (eH) {}
+  try { sh.setFrozenColumns(1); } catch (eF1) {}
+  try { sh.setFrozenRows(3); } catch (eF2) {}
   sh.setColumnWidth(1, 140);
-  for (var cw = 2; cw < nCols; cw++) sh.setColumnWidth(cw, 92);
+  for (var cw = 0; cw < nMatch; cw++) {
+    sh.setColumnWidth(2 + cw * 2, 110); // aanwezig + header
+    sh.setColumnWidth(3 + cw * 2, 88);  // gespeeld
+  }
   sh.setColumnWidth(nCols, 90);
 
   if (sorted.length && nMatch > 0) {
@@ -888,29 +895,10 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
       applyJaNeeValidation_(aanRange);
       applyCheckboxesPlain_(gesRange);
     }
+    try { clearValidationsHard_(sh.getRange(totRowNum, 2, tafelW + 2, nCols)); } catch (eV2) {}
   }
-
-  // Voetregels — merges veilig; falen mag rest niet breken
-  var blankW = lastPlayerRow + 2;
-  var tafelW = blankW + 1;
-  try {
-    sh.getRange(blankW, 1).setValue('');
-    sh.getRange(tafelW, 1).setValue('Tafel');
-    sh.getRange(tafelW + 1, 1).setValue('Truitjes');
-    sh.getRange(tafelW + 2, 1).setValue('Afspraken zie apart blad');
-    sh.getRange(tafelW + 2, 1).setFontColor('#990000').setFontWeight('bold');
-    for (var fi = 0; fi < nMatch; fi++) {
-      var cAan = 2 + fi * 2;
-      safeMerge_(sh, tafelW, cAan, tafelW, cAan + 1, 'Naam');
-      safeMerge_(sh, tafelW + 1, cAan, tafelW + 1, cAan + 1, 'Naam (#nummer)');
-    }
-    sh.getRange(tafelW, 1, tafelW + 1, 1).setFontWeight('bold');
-    sh.getRange(tafelW, 1, tafelW + 2, nCols).setBackground('#F5F5F5');
-    if (sorted.length && nMatch > 0) {
-      clearValidationsHard_(sh.getRange(totRowNum, 2, tafelW + 2, nCols));
-    }
-  } catch (eVoet) {}
 }
+
 
 function formatDateDMyyyy_(iso) {
   var s = String(iso || '').trim();
