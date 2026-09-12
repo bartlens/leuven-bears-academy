@@ -523,7 +523,8 @@ function lookupAtt_(map, keys, sid, field) {
       if (Object.prototype.hasOwnProperty.call(map, k2)) return map[k2];
     }
   }
-  return false;
+  // Leeg = onbekend — NOOIT false (dat werd Nee bij Trainingen)
+  return '';
 }
 
 /**
@@ -1233,26 +1234,39 @@ function readTrainingenAttendanceMap_(sh) {
   if (!sh || sh.getLastRow() < 2 || sh.getLastColumn() < 2) return map;
   var values = sh.getRange(1, 1, sh.getLastRow(), sh.getLastColumn()).getValues();
   var headers = values[0];
-  var row2 = values[1] || [];
-  var isNew = String(row2[0] || '').trim().toLowerCase() === 'sessie_id' ||
-    looksLikeSessieIdRow_(row2);
-  if (!isNew) return map;
 
+  // Zoek sessie_id-rij: bij huidige layout R3 (index 2), niet R2 (dat is datum)
+  var idRowIdx = -1;
+  for (var r = 1; r < Math.min(values.length, 6); r++) {
+    var cell0 = String(values[r][0] || '').trim().toLowerCase();
+    if (cell0 === 'sessie_id' || looksLikeSessieIdRow_(values[r])) {
+      idRowIdx = r;
+      break;
+    }
+  }
+  if (idRowIdx < 0) return map;
+
+  var idRow = values[idRowIdx];
   var sessIds = [];
-  for (var c = 1; c < headers.length; c++) {
+  for (var c = 1; c < Math.max(headers.length, idRow.length); c++) {
     var h = String(headers[c] || '').trim();
-    var sid = String(row2[c] || '').trim();
+    var sid = String(idRow[c] || '').trim();
     if (/^totaal/i.test(h) || !sid || sid.indexOf('|') >= 0) sessIds.push(null);
     else sessIds.push(sid);
   }
-  for (var r = 2; r < values.length; r++) {
-    var name = String(values[r][0] || '').trim();
+
+  for (var r2 = idRowIdx + 1; r2 < values.length; r2++) {
+    var name = String(values[r2][0] || '').trim();
     if (!name || /^totaal$/i.test(name)) continue;
+    if (/^(tafel|truitjes|afspraken)/i.test(name)) continue;
     var keys = parsePlayerKeysFromLabel_(name);
     for (var ci = 0; ci < sessIds.length; ci++) {
       if (!sessIds[ci]) continue;
-      var b = toCheckboxBool_(values[r][ci + 1]);
-      storePlayerKeys_(map, keys, sessIds[ci], null, b);
+      var jn = toJaNee_(values[r2][ci + 1]);
+      // Alleen echte Ja/Nee bewaren — lege cel mag NOOIT Nee worden
+      if (jn === 'Ja' || jn === 'Nee') {
+        storePlayerKeys_(map, keys, sessIds[ci], null, jn);
+      }
     }
   }
   return map;
@@ -1563,6 +1577,12 @@ function herstelAllesNaDataverlies() {
   styleJaNeeOnSheet_(ss.getSheetByName('Trainingen'), 4);
   styleJaNeeOnSheet_(ss.getSheetByName('Wedstrijden'), 4);
   herstelTrainingenTotaalEnVoet_();
+  try {
+    var tr = ss.getSheetByName('Trainingen');
+    if (tr && tr.getMaxRows() >= 3) tr.hideRows(3);
+    var we = ss.getSheetByName('Wedstrijden');
+    if (we && we.getMaxRows() >= 2) we.hideRows(2);
+  } catch (eHide) {}
   ss.toast('Data + kleuren + Wedstrijden-voet hersteld', 'Herstel', 8);
 }
 
