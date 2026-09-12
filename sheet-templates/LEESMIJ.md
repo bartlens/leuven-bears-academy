@@ -1,6 +1,6 @@
 # Google Sheets voor coaches (simpele handleiding)
 
-Doel: **jij vult Beheer in**, ouders vullen alleen **Aanwezigheid** (tabs Trainingen + Wedstrijden). De website leest Beheer automatisch. Sessies verschijnen **automatisch** na sync — je hoeft Sessies niet manueel bij te houden.
+Doel: **jij vult Beheer in**, ouders vullen alleen **Aanwezigheid** (tabs **Trainingen** + **Wedstrijden** + korte **Uitleg**). Geen andere tabs nodig. De website leest Beheer automatisch. Sessies verschijnen **automatisch** na sync — je hoeft Sessies niet manueel bij te houden.
 
 ## Wat heb je nodig?
 
@@ -50,7 +50,8 @@ In de **Aanwezigheid**-spreadsheet:
 
 ### Menu Academy sync
 - **Alles bijwerken vanuit Beheer (spelers + trainingen + matchen)** → `syncAllesVanuitBeheer()`  
-- **Alleen spelers syncen** → `syncSpelersFromBeheer()`
+- **Alleen spelers syncen** → `syncSpelersFromBeheer()`  
+- **Opruimen overbodige tabs** → `opruimOverbodigeTabs_()` (houdt Trainingen/Wedstrijden/Uitleg)
 
 Bestaande vinkjes blijven staan (ook na migratie van de oude matrix); alleen nieuwe sessies/spelers komen erbij.
 

@@ -13,15 +13,11 @@
  * Optioneel (Apps Script-editor): genereerTrainingenUitWeekschema()
  * vult Beheer → Trainingen_data voor de website-kalender (10 weken).
  *
- * Effect van syncAllesVanuitBeheer (U10 C-oriëntatie):
- * - Spelers_ref vanuit Beheer!Spelers (gesorteerd op nummer)
- * - Sessies-index (coach) vanuit weekschema + Trainingen_data + Matchen
- * - Tab Trainingen: 1 rij per kind, kolommen = trainingen, vinkje = komt, Totaal
- * - Tab Wedstrijden: 1 rij per kind, per match 2 kolommen
- *   (Kan aanwezig zijn + Heeft gespeeld), Totaal gespeeld
- * - Bestaande vinkjes blijven via (speler + sessie_id[+veld]); ook migratie
- *   vanuit oude tab Aanwezigheid (sessie-rijen)
- * - Aanwezigheid_per_speler: alleen nieuwe sessie×speler-rijen
+ * Effect van syncAllesVanuitBeheer (simpel voor ouders):
+ * - Tab Trainingen + Wedstrijden (Ja/Nee) vanuit Beheer
+ * - Bestaande antwoorden blijven bewaard
+ * - Geen Spelers_ref / Sessies / tall-tabs meer (ballast)
+ * Run opruimOverbodigeTabs_() eenmaal om oude tabs te wissen.
  */
 
 var TZ_ = 'Europe/Brussels';
@@ -44,22 +40,17 @@ function syncAllesVanuitBeheer() {
   var beheer = openBeheer_(ss);
   var players = readPlayersFromBeheer_(beheer);
 
-  writeSpelersRef_(ss, players);
-
   var sessies = buildSessiesVanuitBeheer_(beheer);
-  writeSessies_(ss, sessies);
-
   var trainings = sessies.filter(function (s) { return s.type === 'training'; });
   var matches = sessies.filter(function (s) { return s.type === 'match'; });
 
   var existing = collectAllAttendanceMaps_(ss);
   writeTrainingenMatrix_(ss, players, trainings, existing);
   writeWedstrijdenMatrix_(ss, players, matches, existing);
-  ensureTallRows_(ss, players, sessies);
 
   ss.toast(
     players.length + ' spelers · ' + trainings.length + ' trainingen · ' +
-      matches.length + ' wedstrijden (vinkjes bewaard).',
+      matches.length + ' wedstrijden (antwoorden bewaard).',
     'Academy sync',
     8
   );
@@ -67,23 +58,8 @@ function syncAllesVanuitBeheer() {
 
 /** Alleen spelers (herbouw matrices met bestaande Sessies-index). */
 function syncSpelersFromBeheer() {
-  var ss = SpreadsheetApp.getActive();
-  var beheer = openBeheer_(ss);
-  var players = readPlayersFromBeheer_(beheer);
-
-  writeSpelersRef_(ss, players);
-
-  var sessiesSheet = ss.getSheetByName('Sessies');
-  var sessies = sessiesSheet ? readSessiesFromSheet_(sessiesSheet) : [];
-  var trainings = sessies.filter(function (s) { return s.type === 'training'; });
-  var matches = sessies.filter(function (s) { return s.type === 'match'; });
-
-  var existing = collectAllAttendanceMaps_(ss);
-  writeTrainingenMatrix_(ss, players, trainings, existing);
-  writeWedstrijdenMatrix_(ss, players, matches, existing);
-  ensureTallRows_(ss, players, sessies);
-
-  ss.toast(players.length + ' spelers gesynchroniseerd.', 'Academy sync', 6);
+  // Zelfde bron als volle sync: altijd Beheer (geen Sessies-tab meer nodig)
+  syncAllesVanuitBeheer();
 }
 
 /**
@@ -151,6 +127,7 @@ function onOpen() {
     .addItem('Alleen spelers syncen', 'syncSpelersFromBeheer')
     .addItem('Ja/Nee chips + zachte kleuren', 'styleJaNeeChipsNu')
     .addItem('Herstel Totaal + voetregels', 'herstelTrainingenTotaalEnVoet_')
+    .addItem('Opruimen overbodige tabs', 'opruimOverbodigeTabs_')
     .addToUi();
 }
 
@@ -205,14 +182,8 @@ function readPlayersFromBeheer_(beheer) {
 }
 
 function writeSpelersRef_(ss, players) {
-  var sh = ss.getSheetByName('Spelers_ref') || ss.insertSheet('Spelers_ref');
-  sh.clear();
-  sh.getRange(1, 1, 1, 4).setValues([['nummer', 'voornaam', 'rij_label', 'actief']]);
-  if (!players.length) return;
-  var rows = players.map(function (p) {
-    return [p.nummer, p.voornaam, p.header, 'ja'];
-  });
-  sh.getRange(2, 1, rows.length, 4).setValues(rows);
+  // Niet meer: Spelers_ref was ballast voor ouders.
+  return;
 }
 
 // ── Sessies bouwen ───────────────────────────────────────────────────
@@ -439,15 +410,8 @@ function readMatchen_(beheer) {
 }
 
 function writeSessies_(ss, sessies) {
-  var sh = ss.getSheetByName('Sessies') || ss.insertSheet('Sessies');
-  sh.clear();
-  var headers = ['sessie_id', 'type', 'datum', 'uur', 'label', 'locatie', 'zichtbaar'];
-  sh.getRange(1, 1, 1, headers.length).setValues([headers]);
-  if (!sessies.length) return;
-  var rows = sessies.map(function (s) {
-    return [s.sessie_id, s.type, s.datum, s.uur, s.label, s.locatie, s.zichtbaar || 'ja'];
-  });
-  sh.getRange(2, 1, rows.length, headers.length).setValues(rows);
+  // Niet meer: Sessies-tab was coach-index / ballast. Sync bouwt in memory.
+  return;
 }
 
 // ── Matrices (U10 C-oriëntatie) ──────────────────────────────────────
@@ -769,6 +733,43 @@ function totaalJaFormula_(colLetter, firstRow, lastRow) {
   var rng = colLetter + firstRow + ':' + colLetter + lastRow;
   // NL-BE locale: ; als scheidingsteken
   return '=IF(COUNTIF(' + rng + ';"Ja")+COUNTIF(' + rng + ';"Nee")=0;"";COUNTIF(' + rng + ';"Ja"))';
+}
+
+
+/**
+ * Wis ballast-tabs. Houdt: Trainingen, Wedstrijden, Uitleg.
+ * (Sessies/Spelers_ref/… mogen weg — sync bouwt alles uit Beheer.)
+ */
+function opruimOverbodigeTabs_() {
+  var ss = SpreadsheetApp.getActive();
+  var keep = {
+    Trainingen: true,
+    Wedstrijden: true,
+    Uitleg: true
+  };
+  var removed = [];
+  ss.getSheets().slice().forEach(function (sh) {
+    var name = sh.getName();
+    if (keep[name]) return;
+    if (ss.getSheets().length <= 1) return;
+    try {
+      ss.deleteSheet(sh);
+      removed.push(name);
+    } catch (e) {
+      try {
+        sh.hideSheet();
+        removed.push(name + ' (verborgen)');
+      } catch (e2) {}
+    }
+  });
+  if (!ss.getSheetByName('Trainingen')) ss.insertSheet('Trainingen');
+  if (!ss.getSheetByName('Wedstrijden')) ss.insertSheet('Wedstrijden');
+  if (!ss.getSheetByName('Uitleg')) ss.insertSheet('Uitleg');
+  ss.toast(
+    removed.length ? ('Weg: ' + removed.join(', ')) : 'Niets te wissen',
+    'Academy sync',
+    10
+  );
 }
 
 function herstelTrainingenTotaalEnVoet_() {
@@ -1189,6 +1190,8 @@ function formatDateDdMm_(iso) {
  * Tall format: alleen nieuwe sessie×speler-combo's.
  */
 function ensureTallRows_(ss, players, sessies) {
+  // Niet meer: tall-formaat is ballast.
+  return;
   var tall = ss.getSheetByName('Aanwezigheid_per_speler');
   if (!tall) return;
 
