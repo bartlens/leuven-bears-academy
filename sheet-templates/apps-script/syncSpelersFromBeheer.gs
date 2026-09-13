@@ -981,14 +981,19 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
     var hc2 = 2 + hm2 * 2;
     var hLab2 = String(headerRow[1 + hm2 * 2] || '').trim() || ('Match ' + (hm2 + 1));
     try { sh.getRange(1, hc2, 1, hc2 + 1).breakApart(); } catch (eBrp) {}
+    SpreadsheetApp.flush();
     sh.getRange(1, hc2).setValue(hLab2)
       .setFontWeight('bold').setWrap(true)
       .setVerticalAlignment('middle').setHorizontalAlignment('center')
       .setFontColor('#000000').setFontSize(10);
     sh.getRange(1, hc2 + 1).clearContent();
+    SpreadsheetApp.flush();
     try { sh.getRange(1, hc2, 1, hc2 + 1).merge(); } catch (eMg) {}
+    SpreadsheetApp.flush();
     // Na merge: label opnieuw zetten (voorkomt lege Match 2)
-    try { sh.getRange(1, hc2).setValue(hLab2); } catch (eLab) {}
+    sh.getRange(1, hc2).setValue(hLab2)
+      .setFontWeight('bold').setWrap(true)
+      .setVerticalAlignment('middle').setHorizontalAlignment('center');
   }
   try { sh.showRows(1, Math.max(footEnd, lastPlayerRow + 5, 25)); } catch (eShow) {}
   try { sh.hideRows(2); } catch (eH) {}
