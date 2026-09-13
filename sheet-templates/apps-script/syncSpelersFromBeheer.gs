@@ -973,21 +973,31 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
     sh.getRange(totRowNum, 1).setValue('Totaal').setFontWeight('bold');
   }
 
-  // Finale polish (volgorde belangrijk): wit → merge → unfreeze → hide sessie_id → freeze
+  // Finale polish: wit → per paar unmerge+label+merge (nooit heel rij 1 ineens) → hide rij 2
   witOnderTotaalOpSheet_(sh);
+  try { sh.setFrozenRows(0); sh.setFrozenColumns(0); } catch (eUf) {}
   SpreadsheetApp.flush();
   for (var hm2 = 0; hm2 < nMatch; hm2++) {
     var hc2 = 2 + hm2 * 2;
+    var hLab2 = String(headerRow[1 + hm2 * 2] || '').trim() || ('Match ' + (hm2 + 1));
+    try { sh.getRange(1, hc2, 1, hc2 + 1).breakApart(); } catch (eBrp) {}
+    sh.getRange(1, hc2).setValue(hLab2)
+      .setFontWeight('bold').setWrap(true)
+      .setVerticalAlignment('middle').setHorizontalAlignment('center')
+      .setFontColor('#000000').setFontSize(10);
+    sh.getRange(1, hc2 + 1).clearContent();
     try { sh.getRange(1, hc2, 1, hc2 + 1).merge(); } catch (eMg) {}
+    // Na merge: label opnieuw zetten (voorkomt lege Match 2)
+    try { sh.getRange(1, hc2).setValue(hLab2); } catch (eLab) {}
   }
-  try { sh.setFrozenRows(0); sh.setFrozenColumns(0); } catch (eUf) {}
   try { sh.showRows(1, Math.max(footEnd, lastPlayerRow + 5, 25)); } catch (eShow) {}
-  try { sh.hideRows(2); } catch (eH) {}  // sessie_id — mag niet zichtbaar voor coaches
+  try { sh.hideRows(2); } catch (eH) {}
   try { sh.setFrozenColumns(1); } catch (eF1) {}
-  try { sh.setFrozenRows(3); } catch (eF2) {}  // 1+hidden2+3; coaches zien header+Aanwezig
+  try { sh.setFrozenRows(3); } catch (eF2) {}
   SpreadsheetApp.flush();
-  try { sh.hideRows(2); } catch (eH2) {}  // nogmaals na freeze
+  try { sh.hideRows(2); } catch (eH2) {}
 }
+
 
 
 
