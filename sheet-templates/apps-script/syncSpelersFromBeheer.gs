@@ -910,8 +910,9 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
     .setFontWeight('normal').setFontSize(9).setFontColor('#666666')
     .setWrap(true).setHorizontalAlignment('center');
 
-  // GEEN merge — labels in aanwezig-kolom
+  // Headers zetten, daarna per paar mergen (B1:C1, D1:E1, …) — try/catch, geen reads
   sh.getRange(1, 1).clearContent().setFontWeight('normal');
+  try { sh.getRange(1, 1, 1, nCols).breakApart(); } catch (eBrAll) {}
   for (var hm = 0; hm < nMatch; hm++) {
     var hc = 2 + hm * 2;
     var hLabel = String(headerRow[1 + hm * 2] || '').trim() || ('Match ' + (hm + 1));
@@ -923,6 +924,15 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
   }
   sh.getRange(1, nCols).setValue('Totaal gespeeld').setFontWeight('bold').setHorizontalAlignment('center');
   sh.setRowHeight(1, 78);
+  SpreadsheetApp.flush();
+  for (var hm2 = 0; hm2 < nMatch; hm2++) {
+    var hc2 = 2 + hm2 * 2;
+    try {
+      sh.getRange(1, hc2, 1, hc2 + 1).merge();
+    } catch (eMg) {
+      // Label blijft in linker cel — sync mag niet crashen
+    }
+  }
 
   try { sh.showRows(1, Math.max(footEnd, lastPlayerRow + 5, 25)); } catch (eShow) {}
   try { if (sh.getMaxRows() >= 2) sh.hideRows(2); } catch (eH) {}
