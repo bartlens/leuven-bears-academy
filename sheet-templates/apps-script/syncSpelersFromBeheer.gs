@@ -910,7 +910,7 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
     .setFontWeight('normal').setFontSize(9).setFontColor('#666666')
     .setWrap(true).setHorizontalAlignment('center');
 
-  // Headers zetten, daarna per paar mergen (B1:C1, D1:E1, …) — try/catch, geen reads
+  // Headers (nog zonder merge)
   sh.getRange(1, 1).clearContent().setFontWeight('normal');
   try { sh.getRange(1, 1, 1, nCols).breakApart(); } catch (eBrAll) {}
   for (var hm = 0; hm < nMatch; hm++) {
@@ -924,20 +924,7 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
   }
   sh.getRange(1, nCols).setValue('Totaal gespeeld').setFontWeight('bold').setHorizontalAlignment('center');
   sh.setRowHeight(1, 78);
-  SpreadsheetApp.flush();
-  for (var hm2 = 0; hm2 < nMatch; hm2++) {
-    var hc2 = 2 + hm2 * 2;
-    try {
-      sh.getRange(1, hc2, 1, hc2 + 1).merge();
-    } catch (eMg) {
-      // Label blijft in linker cel — sync mag niet crashen
-    }
-  }
 
-  try { sh.showRows(1, Math.max(footEnd, lastPlayerRow + 5, 25)); } catch (eShow) {}
-  try { if (sh.getMaxRows() >= 2) sh.hideRows(2); } catch (eH) {}
-  try { sh.setFrozenColumns(1); } catch (eF1) {}
-  try { sh.setFrozenRows(3); } catch (eF2) {}
   sh.setColumnWidth(1, 140);
   for (var cw = 0; cw < nMatch; cw++) {
     sh.setColumnWidth(2 + cw * 2, 110);
@@ -945,7 +932,7 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
   }
   sh.setColumnWidth(nCols, 90);
 
-  // Speler-kolom "Totaal gespeeld": nooit checkboxes (die tonen FALSE)
+  // Speler-kolom "Totaal gespeeld": nooit checkboxes
   if (sorted.length) {
     var totColRange = sh.getRange(firstPlayerRow, nCols, lastPlayerRow, nCols);
     try { totColRange.removeCheckboxes(); } catch (eTotCb) {}
@@ -984,11 +971,24 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
       '=SUM(' + colToLetter_(nCols) + firstPlayerRow + ':' + colToLetter_(nCols) + lastPlayerRow + ')'
     );
     sh.getRange(totRowNum, 1).setValue('Totaal').setFontWeight('bold');
-    witOnderTotaalOpSheet_(sh);
-  } else {
-    witOnderTotaalOpSheet_(sh);
   }
+
+  // Finale polish (volgorde belangrijk): wit → merge → unfreeze → hide sessie_id → freeze
+  witOnderTotaalOpSheet_(sh);
+  SpreadsheetApp.flush();
+  for (var hm2 = 0; hm2 < nMatch; hm2++) {
+    var hc2 = 2 + hm2 * 2;
+    try { sh.getRange(1, hc2, 1, hc2 + 1).merge(); } catch (eMg) {}
+  }
+  try { sh.setFrozenRows(0); sh.setFrozenColumns(0); } catch (eUf) {}
+  try { sh.showRows(1, Math.max(footEnd, lastPlayerRow + 5, 25)); } catch (eShow) {}
+  try { sh.hideRows(2); } catch (eH) {}  // sessie_id — mag niet zichtbaar voor coaches
+  try { sh.setFrozenColumns(1); } catch (eF1) {}
+  try { sh.setFrozenRows(3); } catch (eF2) {}  // 1+hidden2+3; coaches zien header+Aanwezig
+  SpreadsheetApp.flush();
+  try { sh.hideRows(2); } catch (eH2) {}  // nogmaals na freeze
 }
+
 
 
 
@@ -1073,11 +1073,7 @@ function styleJaNeeRanges_(ranges) {
     .setFontColor(JA_NEE_COLORS_.neeFg)
     .setRanges(ranges)
     .build());
-  existing.push(SpreadsheetApp.newConditionalFormatRule()
-    .whenCellEmpty()
-    .setBackground(JA_NEE_COLORS_.leegBg)
-    .setRanges(ranges)
-    .build());
+  // Geen grijs op lege cellen — dat liep door tot onder Totaal en verwart coaches
   sheet.setConditionalFormatRules(existing);
 }
 
@@ -1108,11 +1104,6 @@ function styleJaNeeRange_(range) {
     .whenTextEqualTo('Nee')
     .setBackground(JA_NEE_COLORS_.neeBg)
     .setFontColor(JA_NEE_COLORS_.neeFg)
-    .setRanges([range])
-    .build());
-  existing.push(SpreadsheetApp.newConditionalFormatRule()
-    .whenCellEmpty()
-    .setBackground(JA_NEE_COLORS_.leegBg)
     .setRanges([range])
     .build());
   sheet.setConditionalFormatRules(existing);
