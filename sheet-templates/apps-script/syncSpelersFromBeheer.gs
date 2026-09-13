@@ -799,7 +799,7 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
     headerRow.push('');
     idRow.push(String(visible[i].sessie_id || ''));
     idRow.push(String(visible[i].sessie_id || '') + '|gespeeld');
-    subRow.push('Kan aanwezig zijn');
+    subRow.push('Aanwezig');
     subRow.push('Heeft gespeeld');
   }
   headerRow.push('Totaal gespeeld');
@@ -1598,7 +1598,7 @@ function readWedstrijdenAttendanceMap_(sh) {
     return map;
   }
 
-  // Bepaal data-start: rij met "Kan aanwezig zijn" of rij 3
+  // Bepaal data-start: rij met "Aanwezig" / "Kan aanwezig zijn" of rij 3
   var dataStart = 3;
   for (var r = 2; r < Math.min(values.length, 6); r++) {
     var joined = values[r].map(String).join(' ').toLowerCase();
@@ -1968,7 +1968,7 @@ function herstelWedstrijdenVoet_(ss) {
   // Ensure placeholder Naam under each "Kan aanwezig" col if empty
   var sub = sh.getRange(3, 2, 3, lastCol).getDisplayValues()[0];
   for (var c = 0; c < sub.length; c++) {
-    if (String(sub[c] || '').indexOf('Kan aanwezig') >= 0) {
+    if (String(sub[c] || '').indexOf('Kan aanwezig') >= 0 || String(sub[c] || '').trim() === 'Aanwezig') {
       var col = c + 2;
       if (!String(sh.getRange(tafel, col).getDisplayValue() || '').trim()) {
         sh.getRange(tafel, col).setValue('Naam');
