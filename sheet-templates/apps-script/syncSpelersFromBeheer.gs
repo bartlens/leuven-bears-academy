@@ -767,7 +767,7 @@ function writeTrainingenMatrix_(ss, players, trainings, existing) {
   // Totaal + eronder wit
   if (totRowNum > 0) {
     var wEnd = Math.max(totRowNum + 15, sh.getMaxRows());
-    sh.getRange(totRowNum, 1, wEnd, nCols).setBackground(null);
+    sh.getRange(totRowNum, 1, wEnd, nCols).setBackground('#ffffff');
   }
 }
 
@@ -881,7 +881,7 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
 
   if (totRowNum > 0) {
     try { sh.getRange(totRowNum, 1, footEnd, nCols).removeCheckboxes(); } catch (eTc) {}
-    sh.getRange(totRowNum, 1, footEnd, nCols).clearContent().setBackground(null);
+    sh.getRange(totRowNum, 1, footEnd, nCols).clearContent().setBackground('#ffffff');
     sh.getRange(totRowNum, 1).setValue('Totaal').setFontWeight('bold');
     if (nMatch > 0) {
       for (var tc = 0; tc < nMatch; tc++) {
@@ -974,6 +974,9 @@ function writeWedstrijdenMatrix_(ss, players, matches, existing) {
       '=SUM(' + colToLetter_(nCols) + firstPlayerRow + ':' + colToLetter_(nCols) + lastPlayerRow + ')'
     );
     sh.getRange(totRowNum, 1).setValue('Totaal').setFontWeight('bold');
+    witOnderTotaalOpSheet_(sh);
+  } else {
+    witOnderTotaalOpSheet_(sh);
   }
 }
 
@@ -1234,6 +1237,35 @@ function opruimOverbodigeTabs_() {
   );
 }
 
+
+/** Totaal + alle rijen eronder: expliciet wit (geen lichtgrijs / CF-leeg). */
+function witOnderTotaalBeide_() {
+  var ss = SpreadsheetApp.getActive();
+  witOnderTotaalOpSheet_(ss.getSheetByName(SHEET_TRAININGEN_));
+  witOnderTotaalOpSheet_(ss.getSheetByName(SHEET_WEDSTRIJDEN_));
+  ss.toast('Totaal + eronder wit.', 'Academy sync', 5);
+}
+
+function witOnderTotaalOpSheet_(sh) {
+  if (!sh) return;
+  var lastR = Math.max(sh.getLastRow(), 40);
+  var names = sh.getRange(1, 1, lastR, 1).getDisplayValues();
+  var totRow = 0;
+  for (var i = 0; i < names.length; i++) {
+    if (String(names[i][0] || '').trim() === 'Totaal') {
+      totRow = i + 1;
+      break;
+    }
+  }
+  if (!totRow) return;
+  var endR = Math.max(sh.getMaxRows(), totRow + 40);
+  var endC = Math.max(sh.getMaxColumns(), sh.getLastColumn(), 30);
+  var range = sh.getRange(totRow, 1, endR, endC);
+  try { range.removeCheckboxes(); } catch (e1) {}
+  try { clearValidationsHard_(range); } catch (e2) {}
+  range.setBackground('#ffffff');
+}
+
 function herstelTrainingenTotaalEnVoet_() {
   var ss = SpreadsheetApp.getActive();
   var sh = ss.getSheetByName(SHEET_TRAININGEN_);
@@ -1316,7 +1348,8 @@ function herstelTrainingenTotaalEnVoet_() {
     // Totaal + eronder: wit (geen lichtgrijs)
     var whiteEnd = Math.max(lastRow, totRow + 20, sh.getMaxRows());
     sh.getRange(totRow, 1, whiteEnd, Math.max(endCol, nCols, sh.getMaxColumns()))
-      .setBackground(null);
+      .setBackground('#ffffff');
+    witOnderTotaalOpSheet_(sh);
   }
 
   ss.toast('Totaal telt Ja’s; voetregels zonder dropdown.', 'Academy sync', 6);
@@ -1944,7 +1977,7 @@ function herstelWedstrijdenVoet_(ss) {
     }
   }
   sh.getRange(tafel, 1, tafel + 2, 1).setFontWeight('bold');
-  sh.getRange(tafel, 1, tafel + 2, lastCol).setBackground(null);
+  sh.getRange(totRow, 1, tafel + 2, lastCol).setBackground('#ffffff');
   clearValidationsHard_(sh.getRange(totRow, 2, tafel + 2, lastCol));
 }
 
