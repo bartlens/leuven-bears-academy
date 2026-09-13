@@ -1048,7 +1048,9 @@ function styleJaNeeRanges_(ranges) {
     ranges[i].setDataValidation(rule);
     ranges[i].setHorizontalAlignment('center').setVerticalAlignment('middle').setFontWeight('bold');
   }
-  var existing = sheet.getConditionalFormatRules() || [];
+  // Alleen spelersranges; sheet-CF reset zodat Totaal/voet niet grijs wordt
+  sheet.clearConditionalFormatRules();
+  var existing = [];
   existing.push(SpreadsheetApp.newConditionalFormatRule()
     .whenTextEqualTo('Ja')
     .setBackground(JA_NEE_COLORS_.jaBg)
