@@ -6,7 +6,7 @@ type SectionHeaderProps = {
 
 export function SectionHeader({ eyebrow, title, subtitle }: SectionHeaderProps) {
   return (
-    <div className="mb-8 max-w-2xl animate-in">
+    <div className="mb-6 max-w-2xl animate-in">
       <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-hoop-bright">
         {eyebrow}
       </p>

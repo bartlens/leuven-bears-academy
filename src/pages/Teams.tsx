@@ -4,14 +4,14 @@ import { groupLabels, groupOrder, teamsByGroup } from '../data/teams'
 
 export function Teams() {
   return (
-    <div className="mx-auto max-w-6xl overflow-x-hidden px-4 py-12 sm:px-6">
+    <div className="page-shell">
       <SectionHeader
         eyebrow="Ploegen"
         title="Academy-teams"
         subtitle="Van Future Bears tot seniors, rolstoelbasket en BB4FUN — alle Academy-ploegen behalve de professionele A-ploeg."
       />
 
-      <div className="space-y-12">
+      <div className="space-y-9">
         {groupOrder.map((group) => {
           const list = teamsByGroup(group)
           if (!list.length) return null

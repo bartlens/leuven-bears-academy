@@ -17,7 +17,7 @@ export function TeamLayout() {
 
   if (!team) {
     return (
-      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+      <div className="page-shell">
         <SectionHeader eyebrow="Teams" title="Ploeg niet gevonden" />
         <Link to="/teams" className="font-semibold text-hoop-bright hover:underline">
           ← Terug naar teams

@@ -16,14 +16,14 @@ export function Info() {
   const mapsQuery = encodeURIComponent(club.hall.address)
 
   return (
-    <div className="mx-auto max-w-6xl overflow-x-hidden px-4 py-12 sm:px-6">
+    <div className="page-shell">
       <SectionHeader
         eyebrow="Praktisch"
         title="Info & contact"
         subtitle={`Seizoen ${club.season} — bereikbaarheid, zaal en nuttige links. Geen telefoonnummers op deze pagina (niet verzonnen).`}
       />
 
-      <div className="mb-8 grid gap-4 lg:grid-cols-2">
+      <div className="mb-6 grid gap-4 lg:grid-cols-2">
         <article className="rounded-3xl border border-white/10 bg-panel/80 p-6 sm:p-8">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-hoop-bright">
             Contact

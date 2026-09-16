@@ -56,14 +56,14 @@ export function Lbow() {
   const wheelchair = teamsByGroup('wheelchair')
 
   return (
-    <div className="mx-auto max-w-6xl overflow-x-hidden px-4 py-12 sm:px-6">
+    <div className="page-shell">
       <SectionHeader
         eyebrow="Inclusie"
         title="LBOW & JBOW"
         subtitle="Leuven Bears On Wheels — rolstoelbasketbal van jeugd (JBOW) tot seniors (LBOW), met voorlichting en beleving in scholen."
       />
 
-      <div className="mb-10 grid gap-6 lg:grid-cols-2">
+      <div className="mb-7 grid gap-5 lg:grid-cols-2">
         <article className="rounded-3xl border border-white/10 bg-panel/80 p-6 sm:p-8">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-hoop-bright">
             Wat we doen
@@ -89,7 +89,7 @@ export function Lbow() {
         </blockquote>
       </div>
 
-      <div className="mb-10 grid gap-6 lg:grid-cols-2">
+      <div className="mb-7 grid gap-5 lg:grid-cols-2">
         <article className="rounded-3xl border border-white/10 bg-panel/80 p-6 sm:p-8">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-hoop-bright">
             Visie
@@ -112,7 +112,7 @@ export function Lbow() {
         </article>
       </div>
 
-      <article className="mb-10 rounded-3xl border border-white/10 bg-panel/80 p-6 sm:p-8">
+      <article className="mb-7 rounded-3xl border border-white/10 bg-panel/80 p-6 sm:p-7">
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-hoop-bright">
           Werkwijze
         </p>
@@ -129,14 +129,14 @@ export function Lbow() {
         ) : null}
       </article>
 
-      <article className="mb-10 rounded-3xl border border-white/10 bg-panel/80 p-6 sm:p-8">
+      <article className="mb-7 rounded-3xl border border-white/10 bg-panel/80 p-6 sm:p-7">
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-hoop-bright">
           Fun On Wheels
         </p>
         <p className="mt-3 text-sm leading-relaxed text-muted">{funOnWheels}</p>
       </article>
 
-      <article className="mb-10 rounded-3xl border border-white/10 bg-panel/80 p-6 sm:p-8">
+      <article className="mb-7 rounded-3xl border border-white/10 bg-panel/80 p-6 sm:p-7">
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-hoop-bright">
           Testimonials
         </p>
@@ -157,7 +157,7 @@ export function Lbow() {
       <h2 className="mb-4 font-display text-xl font-bold text-cream sm:text-2xl">
         Ploegen
       </h2>
-      <div className="mb-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mb-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {wheelchair.map((team) => (
           <TeamCard key={team.slug} team={team} />
         ))}
