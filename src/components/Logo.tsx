@@ -4,8 +4,8 @@ type LogoProps = {
   size?: number
 }
 
-const SHIELD_W = 1052
-const SHIELD_H = 1216
+const SHIELD_W = 692
+const SHIELD_H = 800
 
 export function Logo({ className = '', size = 48 }: LogoProps) {
   const width = Math.round((size * SHIELD_W) / SHIELD_H)
