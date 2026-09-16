@@ -8,7 +8,7 @@ export function NieuwsDetail() {
 
   if (!item) {
     return (
-      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+      <div className="page-shell">
         <SectionHeader eyebrow="Nieuws" title="Artikel niet gevonden" />
         <Link to="/nieuws" className="font-semibold text-hoop-bright hover:underline">
           ← Terug naar nieuws
@@ -18,7 +18,7 @@ export function NieuwsDetail() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl overflow-x-hidden px-4 py-12 sm:px-6">
+    <div className="page-shell-narrow">
       <Link
         to="/nieuws"
         className="mb-6 inline-flex text-sm font-semibold text-warm hover:text-hoop-bright"

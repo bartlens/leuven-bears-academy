@@ -23,7 +23,7 @@ export function TeamEvenementen() {
     const upcoming = events.filter((e) => e.date >= todayIso)
     const past = events.filter((e) => e.date < todayIso)
     return (
-      <div className="mx-auto max-w-6xl overflow-x-hidden px-4 py-12 sm:px-6">
+      <div className="page-shell">
         <SectionHeader
           eyebrow="Off-court"
           title="Evenementen"
@@ -174,7 +174,7 @@ export function TeamEvenementen() {
   const list = teamHits.length > 0 ? teamHits : academyEvents
 
   return (
-    <div className="mx-auto max-w-6xl overflow-x-hidden px-4 py-10 sm:px-6">
+    <div className="page-shell">
       <SectionHeader
         eyebrow="Club"
         title="Evenementen"

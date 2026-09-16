@@ -20,20 +20,20 @@ export function Home() {
 
   return (
     <div className="overflow-x-hidden">
-      <section className="relative overflow-x-hidden grain mesh-grid">
-        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-center lg:py-20">
+      <section className="hero-cinematic overflow-x-hidden grain mesh-grid">
+        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-10 lg:py-16">
           <div className="min-w-0 animate-in">
-            <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-hoop/40 bg-hoop/15 px-3 py-1 text-xs font-bold uppercase tracking-wider text-hoop-bright">
+            <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-hoop/40 bg-hoop/15 px-3 py-1 text-xs font-bold uppercase tracking-wider text-hoop-bright">
               Seizoen {club.season}
             </span>
             <HeroTitlePeek name="Leuven Bears" category="Academy" players={demoPlayers} />
-            <p className="mt-5 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
+            <p className="mt-4 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
               {club.mission}
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-6 flex flex-wrap gap-3">
               <Link
                 to="/teams"
-                className="animate-glow inline-flex min-h-11 items-center justify-center rounded-full bg-hoop px-6 py-3 text-sm font-bold text-white transition hover:bg-hoop-bright"
+                className="inline-flex min-h-11 items-center justify-center rounded-full bg-hoop px-6 py-3 text-sm font-bold text-white shadow-lg shadow-hoop/35 transition hover:bg-hoop-bright"
               >
                 Bekijk teams
               </Link>
@@ -50,13 +50,12 @@ export function Home() {
             className="relative flex justify-center animate-in"
             style={{ animationDelay: '0.12s' }}
           >
-            <div className="relative w-full max-w-sm rounded-3xl border border-white/10 bg-panel/80 p-6 shadow-2xl shadow-hoop/20 backdrop-blur sm:p-8">
-              <Logo size={100} className="mx-auto animate-float" />
-              <p className="mt-4 text-center font-display text-xl font-bold text-cream">
-                {club.name}
+            <div className="emblem-stage relative w-full max-w-sm rounded-[1.75rem] border border-white/12 bg-panel/85 p-5 shadow-[0_24px_80px_-20px_rgba(243,128,25,0.45)] backdrop-blur sm:p-6">
+              <Logo size={200} className="relative z-10 mx-auto" />
+              <p className="relative z-10 mt-3 text-center text-sm text-muted">
+                {club.tagline}
               </p>
-              <p className="mt-1 text-center text-sm text-muted">{club.tagline}</p>
-              <div className="mt-6 rounded-2xl border border-hoop/25 bg-hoop/10 p-4">
+              <div className="relative z-10 mt-5 rounded-2xl border border-hoop/30 bg-hoop/10 p-3.5">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-hoop-bright">
                   Opkomende thuiswedstrijden
                 </p>
@@ -70,17 +69,17 @@ export function Home() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-        <div className="card-lift overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-panel to-ink-soft">
-          <div className="flex h-full flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-7">
+      <section className="mx-auto max-w-6xl px-4 py-7 sm:px-6">
+        <div className="card-lift overflow-hidden rounded-[1.75rem] border border-white/10 bg-gradient-to-br from-panel to-ink-soft">
+          <div className="flex h-full flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-hoop-bright">
                 Thuis · Wilsele
               </p>
-              <h2 className="mt-2 font-display text-2xl font-bold text-cream sm:text-3xl">
+              <h2 className="mt-1.5 font-display text-2xl font-bold text-cream sm:text-3xl">
                 Zaterdag 12/09/2026 · 09:00
               </h2>
-              <p className="mt-2 text-muted">{club.hall.name}</p>
+              <p className="mt-1.5 text-muted">{club.hall.name}</p>
             </div>
             <Link
               to="/events"
@@ -93,7 +92,7 @@ export function Home() {
       </section>
 
       <section className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
-        <p className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-hoop-bright">
+        <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-hoop-bright">
           Snel naar
         </p>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -101,7 +100,7 @@ export function Home() {
             <Link
               key={q.to}
               to={q.to}
-              className="card-lift flex items-center gap-4 rounded-3xl border border-white/10 bg-panel/60 p-4"
+              className="card-lift flex items-center gap-4 rounded-[1.5rem] border border-white/10 bg-panel/60 p-4"
             >
               <span className="text-2xl" aria-hidden>
                 {q.emoji}
@@ -115,8 +114,8 @@ export function Home() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+      <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+        <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-hoop-bright">
               Nieuws
@@ -139,8 +138,8 @@ export function Home() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6">
-        <div className="rounded-3xl border border-hoop/30 bg-gradient-to-br from-hoop/20 via-panel to-ink-soft p-8 text-center sm:p-10">
+      <section className="mx-auto max-w-6xl px-4 pb-12 sm:px-6">
+        <div className="rounded-[1.75rem] border border-hoop/30 bg-gradient-to-br from-hoop/20 via-panel to-ink-soft p-7 text-center sm:p-8">
           <h2 className="font-display text-2xl font-bold text-cream sm:text-3xl">
             Lid worden of vragen?
           </h2>
@@ -148,7 +147,7 @@ export function Home() {
             Mail {club.contact.email} of bekijk de FAQ voor aansluiting,
             trainingen en tickets.
           </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <div className="mt-5 flex flex-wrap justify-center gap-3">
             <a
               href={`mailto:${club.contact.email}`}
               className="inline-flex min-h-11 items-center rounded-full bg-hoop px-6 py-3 text-sm font-bold text-white hover:bg-hoop-bright"

@@ -10,8 +10,8 @@ export function Footer() {
 
   return (
     <footer className="mt-auto border-t border-white/8 bg-ink-soft">
-      <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 py-10 text-center sm:px-6">
-        <Logo size={56} className="animate-float" />
+      <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-4 py-8 text-center sm:px-6">
+        <Logo size={96} />
         <div>
           <p className="font-display text-lg font-bold text-cream">{club.name}</p>
           <p className="mt-1 text-sm text-muted">Seizoen {club.season}</p>

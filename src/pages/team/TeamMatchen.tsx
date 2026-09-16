@@ -83,7 +83,7 @@ export function TeamMatchen() {
       : `Opkomende wedstrijden voor ${team.name} · seizoen ${season}.`
 
   return (
-    <div className="mx-auto max-w-6xl overflow-x-hidden px-4 py-12 sm:px-6">
+    <div className="page-shell">
       <SectionHeader eyebrow="Game day" title="Matchen" subtitle={subtitle} />
 
       {loading && (

@@ -6,7 +6,7 @@ export function Faq() {
   const [openId, setOpenId] = useState<string | null>(faqs[0]?.id ?? null)
 
   return (
-    <div className="mx-auto max-w-3xl overflow-x-hidden px-4 py-12 sm:px-6">
+    <div className="page-shell-narrow">
       <SectionHeader
         eyebrow="Hulp"
         title="Veelgestelde vragen"

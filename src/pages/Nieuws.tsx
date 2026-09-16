@@ -4,7 +4,7 @@ import { news } from '../data/news'
 
 export function Nieuws() {
   return (
-    <div className="mx-auto max-w-6xl overflow-x-hidden px-4 py-12 sm:px-6">
+    <div className="page-shell">
       <SectionHeader
         eyebrow="Club"
         title="Nieuws"

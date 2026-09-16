@@ -24,10 +24,7 @@ export function Navbar() {
           className="group flex min-w-0 items-center gap-2.5 sm:gap-3"
           onClick={() => setOpen(false)}
         >
-          <Logo
-            size={42}
-            className="shrink-0 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110"
-          />
+          <Logo size={64} className="shrink-0" />
           <div className="min-w-0 leading-tight">
             <p className="truncate font-display text-sm font-bold tracking-wide text-cream sm:text-base">
               {club.name}
