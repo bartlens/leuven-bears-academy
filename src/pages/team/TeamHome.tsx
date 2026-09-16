@@ -121,7 +121,7 @@ export function TeamHome() {
 
           <div className="relative flex justify-center animate-in" style={{ animationDelay: '0.12s' }}>
             <div className="emblem-stage relative w-full max-w-sm rounded-[1.75rem] border border-white/12 bg-panel/85 p-5 shadow-[0_24px_80px_-20px_rgba(243,128,25,0.45)] backdrop-blur sm:p-6">
-              <Logo size={176} className="relative z-10 mx-auto" />
+              <Logo size={200} className="relative z-10 mx-auto" />
               <p className="relative z-10 mt-3 text-center font-display text-lg font-bold text-cream">
                 {fullName}
               </p>
